@@ -5,9 +5,13 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, random_split
 
-from bertNER import BertNER
+from NERmodel import BertNER
 from config import SetupParameters, TrainingParameters
 from wikiNER import WikiNER
+
+
+__DEBUG = True
+__FREEZE_BERT = True
 
 
 
@@ -18,9 +22,13 @@ def train(train_set, val_set, device, params, criterion):
         train_generator = DataLoader(train_set, **params)
 
         model = BertNER()
+        if __FREEZE_BERT:
+                # freeze bert layers
+                for count, param in enumerate(model.bert.parameters()):
+                        param.requires_grad = False
         model.to(device)
         
-        optimizer = torch.optim.Adam(params=model.parameters(), lr=TrainingParameters.LEARNING_RATE, weight_decay=0.1)
+        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=TrainingParameters.LEARNING_RATE, weight_decay=0.1)
 
         #infer(model, val_set, device, criterion)
         # contain the value losses for each epoch
@@ -38,8 +46,10 @@ def train(train_set, val_set, device, params, criterion):
                         input = local_batch.to(device)
                         labels = local_labels.to(device)
                         attention_mask = local_attention_mask.to(device)
-                        logits = torch.rand((input.shape[0], SetupParameters.BERT_INPUT_LIMIT, 9))
-                        logits, _ = model(input, attention_mask)
+                        if __DEBUG:
+                                logits = torch.rand((input.shape[0], SetupParameters.BERT_INPUT_LIMIT, 9))
+                        else:
+                                logits, _ = model(input, attention_mask)
                         
                         #loss accept only 2D logits, so unpack and repack
                         
@@ -52,6 +62,7 @@ def train(train_set, val_set, device, params, criterion):
 
                         optimizer.step()
                         optimizer.zero_grad()
+                        
 
                 val_epoch_losses = infer(model, val_set, device, criterion)
 
@@ -63,7 +74,7 @@ def train(train_set, val_set, device, params, criterion):
                 val_epoch_mean_loss = np.mean(np.array(val_epoch_losses))
                 val_losses.append(val_epoch_mean_loss)
 
-                print('EPOCH #'+str(epoch)+':: train loss='+str(train_epoch_mean_loss)+' | val loss='+str(val_epoch_mean_loss))
+                print('EPOCH #'+str(epoch)+' :: train loss='+str(train_epoch_mean_loss)+' | val loss='+str(val_epoch_mean_loss))
 
         return model
 
@@ -76,6 +87,9 @@ def infer(model, test_set, device, criterion):
 
         model.to(device)
         losses = []
+        predictions_l = []
+        gold_targets = []
+
         with torch.no_grad():
                 model.eval()
                 for (raw_sentences, local_batch, local_labels, local_attention_mask) in test_generator:
@@ -84,8 +98,10 @@ def infer(model, test_set, device, criterion):
                         labels = local_labels.to(device)
                         attention_mask = local_attention_mask.to(device)
                         
-                        #logits = torch.rand((TrainingParameters.BATCH_SIZE, SetupParameters.BERT_INPUT_LIMIT, 9))
-                        logits, prediction = model(input, attention_mask)
+                        if __DEBUG:
+                                logits = torch.rand((TrainingParameters.BATCH_SIZE, SetupParameters.BERT_INPUT_LIMIT, 9))
+                        else:
+                                logits, prediction = model(input, attention_mask)
 
                         #loss accepts only 2D logits, so unpack and repack
                         loss = torch.zeros(curr_batch_dim).to(device)
@@ -94,8 +110,12 @@ def infer(model, test_set, device, criterion):
                         curr_mean = np.mean(np.array(loss.to('cpu')))
                         losses.append(curr_mean)
 
+                        # accuracy computation
+                        final_prediction = torch.argmax(prediction, dim=-1)
+                        # put the labels into a one dimensional list
+                        predictions_l.extend(final_prediction.view(-1).tolist())
+                        gold_targets.extend(labels.view(-1).tolist())
 
-                        # TODO HERE COMPUTE ALSO ACCURACY (or f1)
 
         return losses
 
@@ -106,17 +126,18 @@ if __name__ == '__main__':
         start = time.time()
 
         # CUDA for PyTorch
-        
-        use_cuda = torch.cuda.is_available()
-        device = torch.device("cuda:0" if use_cuda else "cpu")
-        print('active device = '+str(device))
-        if use_cuda:
-                device = torch.cuda.current_device()
-                device_name = torch.cuda.get_device_name(device)
-                print('gpu name = '+device_name)
-        
-        #device = 'cpu'
+        if not __DEBUG:
+                use_cuda = torch.cuda.is_available()
+                device = torch.device("cuda:0" if use_cuda else "cpu")
+                if use_cuda:
+                        device = torch.cuda.current_device()
+                        device_name = torch.cuda.get_device_name(device)
+                        print('gpu name = '+device_name)
 
+        else:
+                device = 'cpu'
+        print('active device = '+str(device))
+        
 
         file_path = r'./wikinerIT'
         dataset = WikiNER(file_path)
