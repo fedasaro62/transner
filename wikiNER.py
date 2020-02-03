@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 import transformers
 from torch.utils.data import Dataset
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModel
 
 from config import SetupParameters
 
@@ -46,10 +46,9 @@ class WikiNER(Dataset):
         self.__convert_to_BIO()
         self.__create_labels()
 
-
         self._item_len_limit = SetupParameters.BERT_INPUT_LIMIT
-        self.tokenizer = AutoTokenizer.from_pretrained(SetupParameters.GILBERTO_TOKENIZER, do_lower_case=True)
-        #pdb.set_trace()
+        self.tokenizer = AutoTokenizer.from_pretrained(SetupParameters.TOKENIZER_ID, do_lower_case=True)
+        
 
 
 

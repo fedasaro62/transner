@@ -18,7 +18,7 @@ class BertNER(nn.Module):
         super(BertNER, self).__init__()
         torch.manual_seed(TrainingParameters.SEED)
 
-        self.bert = AutoModel.from_pretrained(SetupParameters.GILBERTO_MODEL)
+        self.bert = AutoModel.from_pretrained(SetupParameters.MODEL_ID)
         self.cls_layer = nn.Sequential(nn.Linear(768, 9),
                                         nn.ReLU())
         self._softmax = F.softmax

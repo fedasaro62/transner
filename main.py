@@ -1,3 +1,5 @@
+import math
+import os
 import pdb
 import time
 
@@ -5,20 +7,22 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, random_split
 
-from NERmodel import BertNER
+import Scorer
 from config import SetupParameters, TrainingParameters
+from NERmodel import BertNER
 from wikiNER import WikiNER
 
-
-__DEBUG = True
-__FREEZE_BERT = True
+__DEBUG = False
+__FREEZE_BERT = False
 
 
 
 def train(train_set, val_set, device, params, criterion):
         
-        # initialize the loader
+        # creates the directory for the checkpoints
+        os.makedirs(os.path.dirname(SetupParameters.SAVING_PATH), exist_ok=True)
 
+        # initialize the loader
         train_generator = DataLoader(train_set, **params)
 
         model = BertNER()
@@ -29,16 +33,18 @@ def train(train_set, val_set, device, params, criterion):
         model.to(device)
         
         optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=TrainingParameters.LEARNING_RATE, weight_decay=0.1)
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones = [4, 8, 12], gamma = 0.5)
 
-        #infer(model, val_set, device, criterion)
-        # contain the value losses for each epoch
+        # contains the value losses for each epoch
         train_losses = []
         val_losses = []
+        min_loss = math.inf
         # training loop
         for epoch in range(TrainingParameters.EPOCHS_NUM):
                 model.train()
                 train_epoch_losses = []
                 for step, (raw_sentences, local_batch, local_labels, local_attention_mask) in enumerate(train_generator):
+                        #pdb.set_trace()
                         curr_batch_dim = local_batch.shape[0]
                         # INPUT SIZE = B x 512
                         # LABEL SIZE = B x 512
@@ -64,7 +70,7 @@ def train(train_set, val_set, device, params, criterion):
                         optimizer.zero_grad()
                         
 
-                val_epoch_losses = infer(model, val_set, device, criterion)
+                val_epoch_losses, preds, golds = infer(model, val_set, device, criterion)
 
 
                 #LOSSES COMPUTATION
@@ -74,7 +80,20 @@ def train(train_set, val_set, device, params, criterion):
                 val_epoch_mean_loss = np.mean(np.array(val_epoch_losses))
                 val_losses.append(val_epoch_mean_loss)
 
-                print('EPOCH #'+str(epoch)+' :: train loss='+str(train_epoch_mean_loss)+' | val loss='+str(val_epoch_mean_loss))
+                #SCORES COMPUTATION
+                _, _, f1 = Scorer.score(golds, preds, average='micro')
+
+
+                print('EPOCH #'+str(epoch)+' :: train loss='+str(train_epoch_mean_loss)+' | val loss='+str(val_epoch_mean_loss)+', f1='+str(f1))
+
+
+                if val_epoch_mean_loss < min_loss:
+                        min_loss = val_epoch_mean_loss
+                        torch.save(model.cpu().state_dict(),\
+                                SetupParameters.SAVING_PATH+'state_dict.pt')
+                        model.to(device)
+
+                scheduler.step()
 
         return model
 
@@ -117,7 +136,7 @@ def infer(model, test_set, device, criterion):
                         gold_targets.extend(labels.view(-1).tolist())
 
 
-        return losses
+        return losses, predictions_l, gold_targets
 
 
 
@@ -141,6 +160,7 @@ if __name__ == '__main__':
 
         file_path = r'./wikinerIT'
         dataset = WikiNER(file_path)
+        
 
         # print the types of entities
         types = dataset.get_labels()
@@ -148,6 +168,7 @@ if __name__ == '__main__':
         #print the max length of an article
         max_len = dataset.get_max_sentence_len(dataset.data)
         print('max sentence length: '+str(max_len))
+        
         
 
         # create train, validation and test sets
@@ -159,9 +180,9 @@ if __name__ == '__main__':
         
         params = {'batch_size': TrainingParameters.BATCH_SIZE,
                 'shuffle': True,
-                'num_workers': 2}
+                'num_workers': TrainingParameters.WORKERS_NUM}
         criterion = torch.nn.CrossEntropyLoss().to(device)
-
+        
         model = train(train_set, val_set, device, params, criterion)
 
         infer(model, test_set, device, params, criterion)
