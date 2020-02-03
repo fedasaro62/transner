@@ -47,7 +47,7 @@ class WikiNER(Dataset):
         self.__create_labels()
 
         self._item_len_limit = SetupParameters.BERT_INPUT_LIMIT
-        self.tokenizer = AutoTokenizer.from_pretrained(SetupParameters.TOKENIZER_ID, do_lower_case=True)
+        #self.tokenizer = AutoTokenizer.from_pretrained(SetupParameters.TOKENIZER_ID, do_lower_case=True)
         
 
 
@@ -97,7 +97,7 @@ class WikiNER(Dataset):
         data = source_data
         targets = source_targets
         
-        for article, tags in zip(source_data, source_targets):
+        for count, (article, tags) in enumerate(zip(source_data, source_targets)):
             
             curr_sentence = ''
             for word, tag in zip(article, tags):
@@ -116,23 +116,9 @@ class WikiNER(Dataset):
                 curr_sentence += word + ' '
                 curr_tags.append(tag)
 
-                """
-                if word in list(string.punctuation) and word != '(':
-                    # remove the space before the punctuation
-                    curr_sentence = curr_sentence[:-1]
-                if word == '(':
-                    # do not add the space after the (
-                    curr_sentence += word
-                else:
-                    curr_sentence += word + ' '
-                curr_tags.append(tag)
-                if word in ['.']:
-                    # remove the space after the .
-                    self.data.append(curr_sentence[:-1])
-                    self.targets.append(curr_tags)
-                    curr_sentence = ''
-                    curr_tags = []
-                """
+            if SetupParameters.DATA_LIMIT != -1 and count >= SetupParameters.DATA_LIMIT:
+                break
+
                     
 
     def __create_labels(self):

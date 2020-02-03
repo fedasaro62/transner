@@ -32,8 +32,13 @@ def train(train_set, val_set, device, params, criterion):
                         param.requires_grad = False
         model.to(device)
         
-        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=TrainingParameters.LEARNING_RATE, weight_decay=0.1)
-        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones = [4, 8, 12], gamma = 0.5)
+        #optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=TrainingParameters.LEARNING_RATE, weight_decay=0.1)
+        optimizer = torch.optim.Adam([
+                        {"params": model.bert.parameters(), "lr": TrainingParameters.BERT_LEARNING_RATE},
+                        {"params": model.cls_layer.parameters(), "lr": TrainingParameters.LINEAR_L_LEARNING_RATE}
+                        ],
+                        weight_decay=0.1)
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones = TrainingParameters.MILESTONES, gamma = TrainingParameters.GAMMA)
 
         # contains the value losses for each epoch
         train_losses = []
@@ -59,11 +64,17 @@ def train(train_set, val_set, device, params, criterion):
                         
                         #loss accept only 2D logits, so unpack and repack
                         
-                        loss = torch.zeros(curr_batch_dim).to(device)
+                        losses_list = torch.zeros(curr_batch_dim).to(device)
+                        tot_loss = 0
                         for batch_idx in range(curr_batch_dim):
-                                loss[batch_idx] = criterion(logits[batch_idx], labels[batch_idx]).item()
-
-                        curr_mean = np.mean(np.array(loss.to('cpu')))
+                                curr_loss = criterion(logits[batch_idx], labels[batch_idx])
+                                losses_list[batch_idx] = curr_loss.item()
+                                tot_loss += curr_loss
+                        #pdb.set_trace()
+                        tot_loss /= curr_batch_dim
+                        
+                        tot_loss.backward()
+                        curr_mean = np.mean(np.array(losses_list.to('cpu')))
                         train_epoch_losses.append(curr_mean)
 
                         optimizer.step()
@@ -84,7 +95,7 @@ def train(train_set, val_set, device, params, criterion):
                 _, _, f1 = Scorer.score(golds, preds, average='micro')
 
 
-                print('EPOCH #'+str(epoch)+' :: train loss='+str(train_epoch_mean_loss)+' | val loss='+str(val_epoch_mean_loss)+', f1='+str(f1))
+                print('EPOCH #'+str(epoch)+' :: train loss='+str(train_epoch_mean_loss)+' | val loss='+str(val_epoch_mean_loss)+', f1='+str("%.2f" % f1))
 
 
                 if val_epoch_mean_loss < min_loss:
@@ -139,6 +150,12 @@ def infer(model, test_set, device, criterion):
         return losses, predictions_l, gold_targets
 
 
+def adjust_sizes(train_size, val_size, test_size):
+        if train_size + val_size + test_size < dataset.__len__():
+                offset = adjust_sizes(train_size+1, val_size, test_size)
+        else:
+                return 0
+        return offset + 1
 
 
 if __name__ == '__main__':
@@ -160,7 +177,7 @@ if __name__ == '__main__':
 
         file_path = r'./wikinerIT'
         dataset = WikiNER(file_path)
-        
+        print('Dataset len: '+str(dataset.__len__()))
 
         # print the types of entities
         types = dataset.get_labels()
@@ -175,6 +192,8 @@ if __name__ == '__main__':
         train_size = int(np.floor(TrainingParameters.DATASET_SPLIT[0] * dataset.__len__()))
         val_size = int(np.floor(TrainingParameters.DATASET_SPLIT[1] * dataset.__len__()))
         test_size = int(np.floor(TrainingParameters.DATASET_SPLIT[2] * dataset.__len__()))
+        # it can happen that the dataset is not perfectly divisible
+        train_size += adjust_sizes(train_size, val_size, test_size)
         
         train_set, val_set, test_set = random_split(dataset, [train_size, val_size, test_size])
         
@@ -185,7 +204,9 @@ if __name__ == '__main__':
         
         model = train(train_set, val_set, device, params, criterion)
 
-        infer(model, test_set, device, params, criterion)
+        _, preds, golds = infer(model, test_set, device, criterion)
+        _, _, f1 = Scorer.score(golds, preds, average='micro')
+        print('test f1 score= '+str("%.2f" % f1))
 
 
         end = time.time()
