@@ -26,3 +26,14 @@ class TrainingParameters():
     MILESTONES = list(range(0, EPOCHS_NUM, 5))
     # factor to which multiply the learning rate at each milestone
     GAMMA = 0.5
+
+    # labels frequencies:
+    #   - O: 3031663
+    #   - B-PER: 68199
+    #   - I-PER: 45713
+    #   - B-LOC: 128404
+    #   - I-LOC: 72368
+    #   - B-ORG: 22121
+    #   - I-ORG: 12734
+    #   - B-MISC: 37693
+    #   - I-MISC: 42023

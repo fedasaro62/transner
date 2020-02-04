@@ -179,6 +179,7 @@ if __name__ == '__main__':
         dataset = WikiNER(file_path)
         print('Dataset len: '+str(dataset.__len__()))
 
+
         # print the types of entities
         types = dataset.get_labels()
         print(types)
@@ -196,11 +197,18 @@ if __name__ == '__main__':
         train_size += adjust_sizes(train_size, val_size, test_size)
         
         train_set, val_set, test_set = random_split(dataset, [train_size, val_size, test_size])
-        
+
         params = {'batch_size': TrainingParameters.BATCH_SIZE,
                 'shuffle': True,
                 'num_workers': TrainingParameters.WORKERS_NUM}
-        criterion = torch.nn.CrossEntropyLoss().to(device)
+        
+        train_targets = [dataset.targets[i] for i in train_set.indices]
+        # compute tags frequencies for the loss weights
+        tags_frequencies = dataset.get_tags_frequency(train_targets)
+        tot_tags = np.sum(tags_frequencies)
+        loss_weights = torch.tensor([tot_tags/freq for freq in tags_frequencies])
+        
+        criterion = torch.nn.CrossEntropyLoss(weight=loss_weights).to(device)
         
         model = train(train_set, val_set, device, params, criterion)
 

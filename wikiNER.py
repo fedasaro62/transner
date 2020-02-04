@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 import transformers
 from torch.utils.data import Dataset
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer
 
 from config import SetupParameters
 
@@ -47,7 +47,7 @@ class WikiNER(Dataset):
         self.__create_labels()
 
         self._item_len_limit = SetupParameters.BERT_INPUT_LIMIT
-        #self.tokenizer = AutoTokenizer.from_pretrained(SetupParameters.TOKENIZER_ID, do_lower_case=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(SetupParameters.TOKENIZER_ID, do_lower_case=False)
         
 
 
@@ -268,3 +268,16 @@ class WikiNER(Dataset):
                         self.targets[article_num][tag_num] = 'B' + curr_tag[1:]
                     
                 prev_tag = curr_tag
+
+
+    def get_tags_frequency(self, targets=None):
+        freq = [0 for _ in range(9)]
+
+        if targets is None:
+            targets = self.targets
+
+        for tags in targets:
+            for tag in tags:
+                freq[self._TARGET_TO_LABEL[tag]] += 1
+
+        return freq
