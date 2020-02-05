@@ -8,6 +8,19 @@ from model import BertNER
 from tokenizer import NERTokenizer
 
 
+_TARGET_TO_LABEL = {'O': 0,
+                    'B-PER': 1,
+                    'I-PER': 2,
+                    'B-LOC': 3,
+                    'I-LOC': 4,
+                    'B-ORG': 5,
+                    'I-ORG': 6,
+                    'B-MISC': 7,
+                    'I-MISC': 8}
+_LABEL_TO_TARGET = ['O', 'B-PER', 'I-PER', 'B-LOC', 'I-LOC', 'B-ORG', 'I-ORG', 'B-MISC', 'I-MISC']
+
+
+
 """
 main.py -f <state_dict_file> -s <string>
 """
@@ -52,7 +65,50 @@ def ner(state_dict, text):
     with torch.no_grad():
         input = torch.tensor(tok_ids).unsqueeze(0)
         entities_tags = model(input, attention_mask=torch.ones(input.shape))
-    print(entities_tags.squeeze(0))
+    
+    entities_tags = entities_tags.squeeze(0).tolist()
+    print(tok_ids)
+    print(entities_tags)
+    print([_LABEL_TO_TARGET[e_tag] for e_tag in entities_tags])
+    """
+    # transform tag to type
+    entities_types = []
+    for e_tag in entities_tags:
+        entities_types.append(_LABEL_TO_TARGET[e_tag])
+    """
+    
+    
+    """
+    prev = ''
+    curr_ids = []
+    for id, type in zip(tok_ids, entities_types):
+        pdb.set_trace()
+        if type != prev and prev != '':
+            if len(curr_ids) != 0:
+                pdb.set_trace()
+                print(tokenizer.detokenize(curr_ids)+' : '+prev)
+                curr_ids = []
+
+        if type == 'O':
+            prev = 'O'
+            continue
+
+        elif type[2:] == prev:
+            curr_ids.append(id)
+
+        else:
+            curr_ids.append(id)
+            prev = type[2:]
+
+    if len(curr_ids) != 0:
+        print(tokenizer.detokenize(curr_ids)+' : '+prevs)
+    
+
+
+    word = tokenizer.detokenize(id)
+    e_type = _LABEL_TO_TARGET[tag]
+    print(word+' : '+e_type)
+    """
 
 
 

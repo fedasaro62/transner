@@ -19,3 +19,6 @@ def score(gold, pred, average=None):
     f1 = f1_score(gold, pred, average=average)
 
     return precision, recall, f1
+
+def cls_report(gold, pred, labels=None):
+    return classification_report(gold, pred, target_names=labels)
