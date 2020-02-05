@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 import transformers
 from torch import nn
-from transformers import AutoModel
+from transformers import AutoModel, CamembertConfig
 
 from config import SetupParameters, TrainingParameters
 
@@ -18,8 +18,10 @@ class BertNER(nn.Module):
         super(BertNER, self).__init__()
         torch.manual_seed(TrainingParameters.SEED)
 
-        self.bert = AutoModel.from_pretrained(SetupParameters.MODEL_ID)
-        self.cls_layer = nn.Sequential(nn.Linear(768, 9),
+        config = CamembertConfig.from_pretrained(SetupParameters.MODEL_ID, output_hidden_states=True)
+        self.bert = AutoModel.from_pretrained(SetupParameters.MODEL_ID, config=config)
+        
+        self.cls_layer = nn.Sequential(nn.Linear(768*4, 9),
                                         nn.ReLU())
         self._softmax = F.softmax
 
@@ -28,8 +30,13 @@ class BertNER(nn.Module):
         
         # segment composed only of 1 sentence
         out = self.bert(input, attention_mask = attention_mask)
-        cntx_emb = out[0]
-        logits = self.cls_layer(cntx_emb)
+        #cntx_emb = out[0]
+
+        #tuple of 4xBxLENx768
+        cntx_emb = out[2][-4:]
+        #concat tensors along the last dimension. Size is then BxLENx3072
+        concat_emb = torch.cat(cntx_emb, dim=-1)
+        logits = self.cls_layer(concat_emb)
         prediction = self._softmax(logits, dim=-1)
         
         return logits, prediction

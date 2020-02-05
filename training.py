@@ -54,7 +54,14 @@ def train(train_set, val_set, device, params, criterion):
                 model.train()
                 train_epoch_losses = []
                 for step, (raw_sentences, local_batch, local_labels, local_attention_mask) in enumerate(train_generator):
-                        #pdb.set_trace()
+                        
+                        """
+                        tmp_l = local_attention_mask[0].nonzero()[-1].item()+1
+                        print(raw_sentences[0])
+                        print(local_batch[0][:tmp_l])
+                        print(local_labels[0][:tmp_l])
+                        pdb.set_trace()
+                        """
                         curr_batch_dim = local_batch.shape[0]
                         # INPUT SIZE = B x 512
                         # LABEL SIZE = B x 512

@@ -55,7 +55,6 @@ def main(argv):
 def ner(state_dict, text):
 
     model = BertNER()
-    state_dict
     model.load_state_dict(state_dict)
     
     tokenizer = NERTokenizer()
@@ -70,47 +69,69 @@ def ner(state_dict, text):
     print(tok_ids)
     print(entities_tags)
     print([_LABEL_TO_TARGET[e_tag] for e_tag in entities_tags])
-    """
+    
     # transform tag to type
     entities_types = []
     for e_tag in entities_tags:
         entities_types.append(_LABEL_TO_TARGET[e_tag])
-    """
-    
     
     """
-    prev = ''
+    for id, type in zip(tok_ids, entities_types):
+        if type == 'O':
+            continue
+        else:
+            print(tokenizer.detokenize(id)+' : '+type)
+    """
+    
+    """
+    prev = 'O'
     curr_ids = []
     for id, type in zip(tok_ids, entities_types):
-        pdb.set_trace()
-        if type != prev and prev != '':
+        #pdb.set_trace()
+        if type == 'O' and prev != 'O':
+            print(tokenizer.detokenize(curr_ids)+' : '+prev)
+            curr_ids = []
+            prev = 'O'
+        elif type[2:] == prev and type != 'O':
+            curr_ids.append(id)
+        elif type[0] == 'B' or (type[0] == 'I' and type[2:] != prev):
             if len(curr_ids) != 0:
-                pdb.set_trace()
                 print(tokenizer.detokenize(curr_ids)+' : '+prev)
                 curr_ids = []
-
-        if type == 'O':
-            prev = 'O'
-            continue
-
-        elif type[2:] == prev:
-            curr_ids.append(id)
-
-        else:
             curr_ids.append(id)
             prev = type[2:]
-
-    if len(curr_ids) != 0:
-        print(tokenizer.detokenize(curr_ids)+' : '+prevs)
-    
-
-
-    word = tokenizer.detokenize(id)
-    e_type = _LABEL_TO_TARGET[tag]
-    print(word+' : '+e_type)
     """
 
+    e_list = []
+    prev = 'O'
+    curr_ids = []
+    curr_dict = dict()
+    for count, (id, type) in enumerate(zip(tok_ids, entities_types)):
+        #pdb.set_trace()
+        if type == 'O' and prev != 'O':
+            #pdb.set_trace()
+            curr_dict = {'type': prev, 'value': tokenizer.detokenize(curr_ids), 'offset': offset}
+            e_list.append(curr_dict)
+            curr_ids = []
+            prev = 'O'
+        elif type[2:] == prev and type != 'O':
+            curr_ids.append(id)
+        elif type[0] == 'B' or (type[0] == 'I' and type[2:] != prev):
+            if len(curr_ids) != 0:
+                #pdb.set_trace()
+                curr_dict = {'type': prev, 'value': tokenizer.detokenize(curr_ids), 'offset': offset}
+                e_list.append(curr_dict)
+                curr_ids = []
+            curr_ids.append(id)
+            #computes the offset for the current entity excluding the <s>
+            offset = len(tokenizer.detokenize(tok_ids[1:count])) #take into account the space
+            if tokenizer.detokenize(tok_ids[count+1])[0] == ' ':
+                offset += 1
+            
+            
+            prev = type[2:]
 
+    print(e_list)
 
 
 

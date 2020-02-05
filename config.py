@@ -5,7 +5,7 @@ class SetupParameters():
     BERT_INPUT_LIMIT = 200#512
 
     # number of articles from the dataset (set to -1 to read the entire dataset)
-    DATA_LIMIT = 500
+    DATA_LIMIT = 2000
     MODEL_ID = 'Musixmatch/umberto-commoncrawl-cased-v1'
     TOKENIZER_ID = 'Musixmatch/umberto-commoncrawl-cased-v1'
     SAVING_PATH = 'checkpoints/'
@@ -15,17 +15,17 @@ class SetupParameters():
 class TrainingParameters():
     SEED = 24
     #OPTIMIZATION_STEPS = 128
-    EPOCHS_NUM = 24
-    BATCH_SIZE = 16
-    BERT_LEARNING_RATE = 4e-5
-    LINEAR_L_LEARNING_RATE = 0.001
+    EPOCHS_NUM = 6
+    BATCH_SIZE = 32
+    BERT_LEARNING_RATE = 1e-6
+    LINEAR_L_LEARNING_RATE = 1e-5
     # [training, validation, test]
     DATASET_SPLIT = [.7, .15, .15]
     SHUFFLE_DATASET = True
     WORKERS_NUM = 0
     # milestones at wich change the learning rate
-    MILESTONE_STEP = 4
-    MILESTONES = list(range(0, EPOCHS_NUM, MILESTONE_STEP))
+    MILESTONE_STEPS = 2
+    MILESTONES = list(range(0, EPOCHS_NUM, MILESTONE_STEPS))
     # factor to which multiply the learning rate at each milestone
     GAMMA = 0.5
 
