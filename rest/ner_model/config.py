@@ -6,4 +6,4 @@ class SetupParameters():
     # number of articles from the dataset (set to -1 to read the entire dataset)
     MODEL_ID = 'Musixmatch/umberto-commoncrawl-cased-v1'
     TOKENIZER_ID = 'Musixmatch/umberto-commoncrawl-cased-v1'
-    #LOAD_PATH = 'checkpoints/'
+    LOAD_PATH = 'pretrained_dict/state_dict.pt'

@@ -5,9 +5,13 @@ import sys
 import time
 
 import torch
+from flask import Flask, abort, jsonify, make_response, request
 
-from model import BertNER
-from tokenizer import NERTokenizer
+from ner_model import *
+
+
+app = Flask(__name__)
+
 
 _TARGET_TO_LABEL = {'O': 0,
                     'B-PER': 1,
@@ -17,7 +21,8 @@ _TARGET_TO_LABEL = {'O': 0,
                     'B-ORG': 5,
                     'I-ORG': 6,
                     'B-MISC': 7,
-                    'I-MISC': 8}
+                    'I-MISC': 8
+                    }
 _LABEL_TO_TARGET = ['O', 'B-PER', 'I-PER', 'B-LOC', 'I-LOC', 'B-ORG', 'I-ORG', 'B-MISC', 'I-MISC']
 
 _SHORT_TO_TYPE = {'PER': 'PERSON',
@@ -27,56 +32,37 @@ _SHORT_TO_TYPE = {'PER': 'PERSON',
                 }
 
 
-"""
-main.py -f <state_dict_file> -s <string>
-"""
 
-def main(argv):
- 
-    dictfile = ''
-    input_strings = []
-    try:
-        opts, args = getopt.getopt(argv,"hf:",["help=", "dictfile="])
-    except getopt.GetoptError:
-        print ('main.py -f <state_dict_file> <string1> ... <stringN>')
-        sys.exit(2)
-    for count, (opt, arg) in enumerate(opts):
-        if opt in ('-h', '--help'):
-            print ('Correct format: main.py -f <state_dict_file> <string1> ... <stringN>')
-            sys.exit()
-        elif opt in ("-f", "--dictfile"):
-            dictfile = arg
-        else:
-            print('-h for help')
-            sys.exit(2)
+# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Mario Rossi è nato a Busto Arsizio", "Il signor D'Alberto ha effettuato un pagamento a Matteo", "Marco e Luca sono andati a Magenta"]}' http://localhost:5000/ner_api/v0.1/ner
 
-    for arg in args[count:]:
-        input_strings.append(arg)
-    
-    if dictfile == '' or len(input_strings) == 0:
-        print('Missing argument (-h for help)')
-        sys.exit(2)
-    
+@app.route('/ner_api/v0.1/ner', methods=['POST'])
+def ner():
+    """
+    input in the format {'strings': ['string1', 'string2', ...]}
+    """
+
+    input_strings = request.get_json()['strings']
+    dictfile = SetupParameters.LOAD_PATH
 
     # load the model and the tokenizer
-    model = BertNER()
+    model = BertNER(SetupParameters.MODEL_ID)
     state_dict = torch.load(dictfile)
     model.load_state_dict(state_dict)
     model.eval()
-    tokenizer = NERTokenizer()
+    tokenizer = NERTokenizer(SetupParameters.MODEL_ID)
     
     results_l = []
     for s in input_strings:
-        entities_list = ner(model, tokenizer, text=s)
+        entities_list = extract_entities(model, tokenizer, text=s)
         results_l.append({'sentence': s, 'entities': entities_list})
     
-    output = {'timestamp': time.time(), 'results': results_l}
-    json_output = json.dumps(output, ensure_ascii=False)
-    return json_output
+    json_output = {'timestamp': time.time(), 'results': results_l}
+    #json_output = json.dumps(output, ensure_ascii=False)
+    return jsonify(json_output)
 
 
 
-def ner(model, tokenizer, text):
+def extract_entities(model, tokenizer, text):
 
     tok_ids = tokenizer.tokenize(text)
     with torch.no_grad():
@@ -127,11 +113,13 @@ def ner(model, tokenizer, text):
 
 
 
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
+    
+    
 
-
-
-
-
+import pdb
 if __name__ == '__main__':
-    out = main(sys.argv[1:])
-    print(out)
+    #pdb.set_trace()
+    app.run(debug=True, port=5000)

@@ -7,18 +7,16 @@ import transformers
 from torch import nn
 from transformers import AutoModel, CamembertConfig
 
-from config import SetupParameters
-
 
 class BertNER(nn.Module):
 
 
-    def __init__(self):
+    def __init__(self, model_id):
 
         super(BertNER, self).__init__()
 
-        config = CamembertConfig.from_pretrained(SetupParameters.MODEL_ID, output_hidden_states=True)
-        self.bert = AutoModel.from_pretrained(SetupParameters.MODEL_ID, config=config)
+        config = CamembertConfig.from_pretrained(model_id, output_hidden_states=True)
+        self.bert = AutoModel.from_pretrained(model_id, config=config)
         self.cls_layer = nn.Sequential(nn.Linear(768*4, 9),
                                         nn.ReLU())
         self._softmax = F.softmax
