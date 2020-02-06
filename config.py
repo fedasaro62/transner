@@ -5,7 +5,7 @@ class SetupParameters():
     BERT_INPUT_LIMIT = 200#512
 
     # number of articles from the dataset (set to -1 to read the entire dataset)
-    DATA_LIMIT = 2000
+    DATA_LIMIT = 3000
     MODEL_ID = 'Musixmatch/umberto-commoncrawl-cased-v1'
     TOKENIZER_ID = 'Musixmatch/umberto-commoncrawl-cased-v1'
     SAVING_PATH = 'checkpoints/'
@@ -18,7 +18,7 @@ class TrainingParameters():
     EPOCHS_NUM = 6
     BATCH_SIZE = 32
     BERT_LEARNING_RATE = 1e-6
-    LINEAR_L_LEARNING_RATE = 1e-5
+    LINEAR_L_LEARNING_RATE = 1e-3
     # [training, validation, test]
     DATASET_SPLIT = [.7, .15, .15]
     SHUFFLE_DATASET = True
