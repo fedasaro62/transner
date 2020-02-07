@@ -33,7 +33,7 @@ _SHORT_TO_TYPE = {'PER': 'PERSON',
 
 
 
-# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Mario Rossi è nato a Busto Arsizio", "Il signor D'Alberto ha effettuato un pagamento a Matteo", "Marco e Luca sono andati a Magenta"]}' http://localhost:5000/ner_api/v0.1/ner
+# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Mario Rossi è nato a Busto Arsizio", "Il signor Di Marzio ha effettuato un pagamento a Matteo", "Marco e Luca sono andati a Magenta"]}' http://localhost:5000/ner_api/v0.1/ner
 
 @app.route('/ner_api/v0.1/ner', methods=['POST'])
 def ner():
