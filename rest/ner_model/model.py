@@ -14,7 +14,7 @@ class BertNER(nn.Module):
     def __init__(self, model_id):
 
         super(BertNER, self).__init__()
-
+    
         config = CamembertConfig.from_pretrained(model_id, output_hidden_states=True)
         self.bert = AutoModel.from_pretrained(model_id, config=config)
         self.cls_layer = nn.Sequential(nn.Linear(768*4, 9),

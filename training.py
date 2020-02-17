@@ -14,7 +14,7 @@ from wikiNER import WikiNER
 
 __DEBUG = False
 __FREEZE_BERT = False
-__LOAD_PRETRAINED_FILE = True
+__LOAD_PRETRAINED_FILE = False
 
 
 
@@ -66,9 +66,15 @@ def train(train_set, val_set, device, params, criterion):
                         # INPUT SIZE = B x 512
                         # LABEL SIZE = B x 512
                         # ATTENTION MASK = B x 512
+                        
                         input = local_batch.to(device)
                         labels = local_labels.to(device)
                         attention_mask = local_attention_mask.to(device)
+                        
+                        #batch_memory_size = input.element_size() * input.nelement() + labels.element_size() * labels.nelement() + attention_mask.element_size() * attention_mask.nelement()
+                        
+                        #pdb.set_trace()
+                        
                         if __DEBUG:
                                 logits = torch.rand((input.shape[0], SetupParameters.BERT_INPUT_LIMIT, 9))
                         else:
