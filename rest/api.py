@@ -45,11 +45,11 @@ def ner():
     dictfile = SetupParameters.LOAD_PATH
 
     # load the model and the tokenizer
-    model = BertNER(SetupParameters.MODEL_ID)
+    model = BertNER(SetupParameters.MODEL_SEED)
     state_dict = torch.load(dictfile)
     model.load_state_dict(state_dict)
     model.eval()
-    tokenizer = NERTokenizer(SetupParameters.MODEL_ID)
+    tokenizer = NERTokenizer(SetupParameters.TOKENIZER_ID)
     
     results_l = []
     for s in input_strings:
