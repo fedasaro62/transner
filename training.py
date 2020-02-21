@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader, random_split
 import Scorer
 from config import SetupParameters, TrainingParameters
 from NERmodel import BertNER
-from wikiNER import WikiNER
+from dataset_wikiNER import WikiNER
 
 __DEBUG = False
 __FREEZE_BERT = False
@@ -201,7 +201,7 @@ def adjust_sizes(train_size, val_size, test_size):
 
 if __name__ == '__main__':
         start = time.time()
-
+        
         # CUDA for PyTorch
         if not __DEBUG:
                 use_cuda = torch.cuda.is_available()

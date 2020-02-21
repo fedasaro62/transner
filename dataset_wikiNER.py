@@ -57,11 +57,11 @@ class WikiNER(Dataset):
         data = []
         targets = []
 
-
         article_end = True
         just_started = True
         with open(file_path, 'r') as file:
-
+            curr_words = []
+            curr_labels = []
             for line in file:
                 if line == '\n':
                     article_end = True
@@ -85,6 +85,13 @@ class WikiNER(Dataset):
 
                     curr_words.append(triplet[0]) #word
                     curr_labels.append(triplet[2]) #NER label
+        
+        #add the last article
+        if line != '\n':
+            if len(curr_words) != len(curr_labels):
+                raise ValueError('[ERROR] words-labels mismatch')
+            data.append(curr_words)
+            targets.append(curr_labels)
 
         return data, targets
 
@@ -100,6 +107,9 @@ class WikiNER(Dataset):
         for count, (article, tags) in enumerate(zip(source_data, source_targets)):
             
             curr_sentence = ''
+            curr_tags = []
+            if len(article) != len(tags):
+                raise ValueError('Article and tag lengths do not match')
             for word, tag in zip(article, tags):
                 
                 if word in ['.']:
@@ -115,6 +125,8 @@ class WikiNER(Dataset):
                 
                 curr_sentence += word + ' '
                 curr_tags.append(tag)
+            if len(self.data[-1].split()) != len(self.targets[-1]):
+                raise ValueError('Sentence and tag lengths do not match')
 
             if SetupParameters.DATA_LIMIT != -1 and count >= SetupParameters.DATA_LIMIT:
                 break
