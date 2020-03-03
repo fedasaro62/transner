@@ -1,3 +1,6 @@
 .vscode/*
 __pycache__/*
 state_dict.pt
+rest/__pycache__/*
+checkpoints/*
+rest/state_dict/*

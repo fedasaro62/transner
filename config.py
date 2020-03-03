@@ -9,7 +9,7 @@ class SetupParameters():
     MODEL_ID = 'Musixmatch/umberto-commoncrawl-cased-v1'
     TOKENIZER_ID = 'Musixmatch/umberto-commoncrawl-cased-v1'
     SAVING_PATH = 'checkpoints/'
-    LOAD_FILE = SAVING_PATH+'state_dict.pt'
+    LOAD_FILE = SAVING_PATH+'gold/gold.pt'
 
 
 class TrainingParameters():

@@ -4,10 +4,10 @@ import pdb
 import sys
 import time
 
-import torch
+from simpletransformers.ner.ner_model import NERModel
 from flask import Flask, abort, jsonify, make_response, request
 
-from ner_model import *
+from config import SetupParameters
 
 
 app = Flask(__name__)
@@ -33,13 +33,91 @@ _SHORT_TO_TYPE = {'PER': 'PERSON',
 
 
 
-# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Mario Rossi è nato a Busto Arsizio", "Il signor Di Marzio ha effettuato un pagamento a Matteo", "Marco e Luca sono andati a Magenta"]}' http://localhost:5000/ner_api/v0.1/ner
+# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Vincenzo G. Fonzi è nato a Caserta il 13/08/1983", "Il seguente documento è firmato in calce per il signor Di Marzio.", "Conferma di avvenuto pagamento a Poste Italiane da parte del Sig. Giuseppe Maria Boccardi."]}' http://localhost:5000/ner_api/v0.1/ner
 
 @app.route('/ner_api/v0.1/ner', methods=['POST'])
 def ner():
+    input_strings = request.get_json()['strings']
+    model = NERModel('bert', SetupParameters.ITA_MODEL, args={'no_cache': True, 'use_cached_eval_features': False})
+    predictions, _ = model.predict(input_strings)
+    #pdb.set_trace()
+
+    assert len(predictions) == len(input_strings)
+    results = []
+    curr_res = {}
+    for s, prediction in zip(input_strings, predictions):
+        curr_res = dict()
+        curr_res['sentence'] = s
+        curr_res['entities'] = []
+        curr_offset = 0
+        #for multi-word entities
+        beginning_offset = None
+        active_e_type = None
+        active_e_value = ''
+
+        for e_pred in prediction:
+            kv_pair = list(e_pred.items())
+            assert len(kv_pair) == 1
+            #pdb.set_trace()
+            e_value, e_type = kv_pair[0]
+            if e_type[0] == 'B':
+                #if a entity is still active, close it
+                if active_e_type:
+                    curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
+                    curr_res['entities'].append(curr_entity)
+                beginning_offset = curr_offset
+                active_e_type= e_type[2:]
+                active_e_value += e_value + ' '
+            elif e_type[0] == 'I':
+                #treat it as a beginner if the beginner is not present
+                if not active_e_type:
+                    beginning_offset = curr_offset
+                    active_e_type= e_type[2:]
+                    active_e_value += e_value + ' '
+                elif e_type[2:] == active_e_type:
+                    active_e_value += e_value + ' '
+                else:
+                    curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
+                    curr_res['entities'].append(curr_entity)
+                    beginning_offset = curr_offset
+                    active_e_type= e_type[2:]
+                    active_e_value += e_value + ' '
+            elif e_type[0] == 'O' and active_e_type:
+                curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
+                curr_res['entities'].append(curr_entity)
+                beginning_offset = None
+                active_e_type = None
+                active_e_value = ''
+
+            #offset takes into account also the space
+            curr_offset += len(e_value) + 1
+            #if last prediction for that string, then save the active entities
+            if curr_offset > len(s) and active_e_type:
+                curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
+                curr_res['entities'].append(curr_entity)
+        results.append(curr_res)
+
+    return jsonify(results)
+
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
+    
+    
+
+import pdb
+if __name__ == '__main__':
+    #pdb.set_trace()
+    app.run(debug=True, port=5000)
+
+
     """
-    input in the format {'strings': ['string1', 'string2', ...]}
-    """
+def ner():
+    
+    #input in the format {'strings': ['string1', 'string2', ...]}
+    
 
     input_strings = request.get_json()['strings']
     dictfile = SetupParameters.LOAD_PATH
@@ -109,17 +187,4 @@ def extract_entities(model, tokenizer, text):
             prev = type[2:]
 
     return entities_list
-
-
-
-
-@app.errorhandler(404)
-def not_found(error):
-    return make_response(jsonify({'error': 'Not found'}), 404)
-    
-    
-
-import pdb
-if __name__ == '__main__':
-    #pdb.set_trace()
-    app.run(debug=True, port=5000)
+"""

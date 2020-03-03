@@ -14,7 +14,7 @@ from dataset_wikiNER import WikiNER
 
 __DEBUG = False
 __FREEZE_BERT = False
-__LOAD_PRETRAINED_FILE = False
+__LOAD_PRETRAINED_FILE = True
 
 
 
