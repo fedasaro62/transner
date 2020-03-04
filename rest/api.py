@@ -43,6 +43,7 @@ _SHORT_TO_TYPE = {'PER': 'PERSON',
 
 @app.route('/ner_api/v0.1/ner', methods=['POST'])
 def ner():
+    start = time.time()
     input_strings = request.get_json()['strings']
     model = model_dict['NERmodel']
     
@@ -65,7 +66,7 @@ def ner():
         for e_pred in prediction:
             kv_pair = list(e_pred.items())
             assert len(kv_pair) == 1
-            #pdb.set_trace()
+            
             e_value, e_type = kv_pair[0]
             
             if e_type[0] == 'B':
@@ -104,8 +105,10 @@ def ner():
                 curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
                 curr_res['entities'].append(curr_entity)
         results.append(curr_res)
+    end = time.time()
+    execution_t = end-start 
 
-    logging.info("-----\nUser ip: {}\nInput strings: {}\nResponse: {}\n-----".format(request.remote_addr, input_strings, results))
+    logging.info("-----\nUser ip: {}\nTimestamp: {}\nResponse time: {:5.2f}s\nInput strings: {}\nResponse: {}\n-----".format(request.remote_addr, start, execution_t, input_strings, results))
 
     return jsonify(results), 200
 
@@ -119,5 +122,5 @@ def not_found(error):
 
 if __name__ == '__main__':
     
-    model_dict['NERmodel'] = NERModel('bert', SetupParameters.ITA_MODEL, use_cuda= False, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True})
+    model_dict['NERmodel'] = NERModel('bert', SetupParameters.IT_MODEL, use_cuda= False, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True})
     app.run(debug=True, port=5000)
