@@ -71,4 +71,4 @@ $ curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Mario Ro
 
 
 
-pretrained model link: https://istitutoboella-my.sharepoint.com/:f:/g/personal/matteo_senese_linksfoundation_com/EpjxPbAEcVlHiylOhwZaz9MBVuC6JgJR1vYwZoW0sBOb7A?e=c6dXeo
+pretrained model link: https://istitutoboella-my.sharepoint.com/:f:/g/personal/matteo_senese_linksfoundation_com/EpjxPbAEcVlHiylOhwZaz9MBVuC6JgJR1vYwZoW0sBOb7A
