@@ -1,16 +1,21 @@
 import getopt
 import json
+import logging
+import os
 import pdb
 import sys
 import time
 
-from simpletransformers.ner.ner_model import NERModel
 from flask import Flask, abort, jsonify, make_response, request
+from simpletransformers.ner.ner_model import NERModel
 
 from config import SetupParameters
 
-
 app = Flask(__name__)
+
+os.makedirs('log/', exist_ok=True)
+logging.basicConfig(level=logging.INFO, filename='log/ner.log')
+model_dict = {'NERmodel': None}
 
 
 _TARGET_TO_LABEL = {'O': 0,
@@ -34,13 +39,15 @@ _SHORT_TO_TYPE = {'PER': 'PERSON',
 
 
 # curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Vincenzo G. Fonzi è nato a Caserta il 13/08/1983", "Il seguente documento è firmato in calce per il signor Di Marzio.", "Conferma di avvenuto pagamento a Poste Italiane da parte del Sig. Giuseppe Maria Boccardi."]}' http://localhost:5000/ner_api/v0.1/ner
+# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["vincenzo g. fonzi è nato a caserta il 13/08/1983", "Il seguente documento è firmato in calce per il signor di marzio.", "Conferma di avvenuto pagamento a poste italiane da parte del sig. giuseppe maria boccardi."]}' http://localhost:5000/ner_api/v0.1/ner
 
 @app.route('/ner_api/v0.1/ner', methods=['POST'])
 def ner():
     input_strings = request.get_json()['strings']
-    model = NERModel('bert', SetupParameters.ITA_MODEL, args={'no_cache': True, 'use_cached_eval_features': False})
+    model = model_dict['NERmodel']
+    
+    #model = NERModel('bert', SetupParameters.ITA_MODEL, args={'no_cache': True, 'use_cached_eval_features': False})
     predictions, _ = model.predict(input_strings)
-    #pdb.set_trace()
 
     assert len(predictions) == len(input_strings)
     results = []
@@ -60,6 +67,7 @@ def ner():
             assert len(kv_pair) == 1
             #pdb.set_trace()
             e_value, e_type = kv_pair[0]
+            
             if e_type[0] == 'B':
                 #if a entity is still active, close it
                 if active_e_type:
@@ -97,7 +105,9 @@ def ner():
                 curr_res['entities'].append(curr_entity)
         results.append(curr_res)
 
-    return jsonify(results)
+    logging.info("-----\nUser ip: {}\nInput strings: {}\nResponse: {}\n-----".format(request.remote_addr, input_strings, results))
+
+    return jsonify(results), 200
 
 
 
@@ -107,84 +117,7 @@ def not_found(error):
     
     
 
-import pdb
 if __name__ == '__main__':
-    #pdb.set_trace()
+    
+    model_dict['NERmodel'] = NERModel('bert', SetupParameters.ITA_MODEL, use_cuda= False, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True})
     app.run(debug=True, port=5000)
-
-
-    """
-def ner():
-    
-    #input in the format {'strings': ['string1', 'string2', ...]}
-    
-
-    input_strings = request.get_json()['strings']
-    dictfile = SetupParameters.LOAD_PATH
-
-    # load the model and the tokenizer
-    model = BertNER(SetupParameters.MODEL_SEED)
-    state_dict = torch.load(dictfile)
-    model.load_state_dict(state_dict)
-    model.eval()
-    tokenizer = NERTokenizer(SetupParameters.TOKENIZER_ID)
-    
-    results_l = []
-    for s in input_strings:
-        entities_list = extract_entities(model, tokenizer, text=s)
-        results_l.append({'sentence': s, 'entities': entities_list})
-    
-    json_output = {'timestamp': time.time(), 'results': results_l}
-    #json_output = json.dumps(output, ensure_ascii=False)
-    return jsonify(json_output)
-
-
-
-def extract_entities(model, tokenizer, text):
-
-    tok_ids = tokenizer.tokenize(text)
-    with torch.no_grad():
-        input = torch.tensor(tok_ids).unsqueeze(0)
-        entities_tags = model(input, attention_mask=torch.ones(input.shape))
-    
-    entities_tags = entities_tags.squeeze(0).tolist()
-    print(tok_ids)
-    print(entities_tags)
-    print([_LABEL_TO_TARGET[e_tag] for e_tag in entities_tags])
-    
-    # transform tag to type
-    entities_types = []
-    for e_tag in entities_tags:
-        entities_types.append(_LABEL_TO_TARGET[e_tag])
-
-    # create an array of objects of the type {'type': PERSON, 'value': mario rossi, 'offset': 0}
-    entities_list = []
-    prev = 'O'
-    curr_ids = []
-    curr_dict = {}
-    for count, (id, type) in enumerate(zip(tok_ids, entities_types)):
-        #pdb.set_trace()
-        if type == 'O' and prev != 'O':
-            #pdb.set_trace()
-            curr_dict = {'type': _SHORT_TO_TYPE[prev], 'value': tokenizer.detokenize(curr_ids), 'offset': offset}
-            entities_list.append(curr_dict)
-            curr_ids = []
-            prev = 'O'
-        elif type[2:] == prev and type != 'O':
-            curr_ids.append(id)
-        elif type[0] == 'B' or (type[0] == 'I' and type[2:] != prev):
-            if len(curr_ids) != 0:
-                #pdb.set_trace()
-                curr_dict = {'type': _SHORT_TO_TYPE[prev], 'value': tokenizer.detokenize(curr_ids), 'offset': offset}
-                entities_list.append(curr_dict)
-                curr_ids = []
-            curr_ids.append(id)
-            #computes the offset for the current entity excluding the <s>
-            offset = len(tokenizer.detokenize(tok_ids[1:count]))
-            # take into account the space contained in the next token
-            if offset > 0:
-                offset += 1      
-            prev = type[2:]
-
-    return entities_list
-"""
