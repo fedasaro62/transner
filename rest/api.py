@@ -33,7 +33,7 @@ _LABEL_TO_TARGET = ['O', 'B-PER', 'I-PER', 'B-LOC', 'I-LOC', 'B-ORG', 'I-ORG', '
 _SHORT_TO_TYPE = {'PER': 'PERSON',
                 'LOC': 'LOCATION',
                 'ORG': 'ORGANIZATION',
-                'MISC': 'MISCELLANEOUS' 
+                'MISC': 'MISCELLANEOUS'
                 }
 
 
@@ -46,7 +46,7 @@ def ner():
     start = time.time()
     input_strings = request.get_json()['strings']
     model = model_dict['NERmodel']
-    
+
     #model = NERModel('bert', SetupParameters.ITA_MODEL, args={'no_cache': True, 'use_cached_eval_features': False})
     predictions, _ = model.predict(input_strings)
 
@@ -66,9 +66,9 @@ def ner():
         for e_pred in prediction:
             kv_pair = list(e_pred.items())
             assert len(kv_pair) == 1
-            
+
             e_value, e_type = kv_pair[0]
-            
+
             if e_type[0] == 'B':
                 #if a entity is still active, close it
                 if active_e_type:
@@ -106,7 +106,7 @@ def ner():
                 curr_res['entities'].append(curr_entity)
         results.append(curr_res)
     end = time.time()
-    execution_t = end-start 
+    execution_t = end-start
 
     logging.info("-----\nUser ip: {}\nTimestamp: {}\nResponse time: {:5.2f}s\nInput strings: {}\nResponse: {}\n-----".format(request.remote_addr, start, execution_t, input_strings, results))
 
@@ -117,10 +117,9 @@ def ner():
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
-    
-    
+
 
 if __name__ == '__main__':
-    
+
     model_dict['NERmodel'] = NERModel('bert', SetupParameters.IT_MODEL, use_cuda= False, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True})
     app.run(host='0.0.0.0', debug=True, port=5000)
