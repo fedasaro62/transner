@@ -38,8 +38,8 @@ _SHORT_TO_TYPE = {'PER': 'PERSON',
 
 
 
-# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Vincenzo G. Fonzi è nato a Caserta il 13/08/1983", "Il seguente documento è firmato in calce per il signor Di Marzio.", "Conferma di avvenuto pagamento a Poste Italiane da parte del Sig. Giuseppe Maria Boccardi."]}' http://localhost:5000/ner_api/v0.1/ner
-# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["vincenzo g. fonzi è nato a caserta il 13/08/1983", "Il seguente documento è firmato in calce per il signor di marzio.", "Conferma di avvenuto pagamento a poste italiane da parte del sig. giuseppe maria boccardi."]}' http://localhost:5000/ner_api/v0.1/ner
+# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Vincenzo G. Fonzi è nato a Caserta il 13/08/1983", "Il seguente documento è firmato in calce per il signor Di Marzio.", "Conferma di avvenuto pagamento a Poste Italiane da parte del sig. Giuseppe Maria Boccardi."]}' http://localhost:5000/ner_api/v0.1/ner
+# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Maria Santos è nata a Cardenas il 13/08/1983", "The following documents were signed by John Stewart at Berlin headquarters of Deutsche Bank", "Bevestiging van betaling aan ABN AMRO door dhr. Rutger Verhoeven."]}' http://localhost:5000/ner_api/v0.1/ner
 
 @app.route('/ner_api/v0.1/ner', methods=['POST'])
 def ner():
