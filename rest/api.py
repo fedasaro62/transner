@@ -7,11 +7,13 @@ import sys
 import time
 
 from flask import Flask, abort, jsonify, make_response, request
+from flask_cors import CORS
 from simpletransformers.ner.ner_model import NERModel
 
 from config import SetupParameters
 
 app = Flask(__name__)
+cors = CORS(app)
 
 os.makedirs('log/', exist_ok=True)
 logging.basicConfig(level=logging.INFO, filename='log/ner.log')
