@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import pdb
+import re
 import sys
 import time
 
@@ -38,7 +39,7 @@ _SHORT_TO_TYPE = {'PER': 'PERSON',
                 'MISC': 'MISCELLANEOUS'
                 }
 
-
+# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Transner non gestisce <l'>: l'Europa oppure Europa. Oms trattata come persona: Oms"]}' http://localhost:5000/ner_api/v0.1/ner
 
 # curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Vincenzo G. Fonzi è nato a Caserta il 13/08/1983", "Il seguente documento è firmato in calce per il signor Di Marzio.", "Conferma di avvenuto pagamento a Poste Italiane da parte del sig. Giuseppe Maria Boccardi."]}' http://localhost:5000/ner_api/v0.1/ner
 # curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Maria Santos è nata a Cardenas il 13/08/1983", "The following documents were signed by John Stewart at Berlin headquarters of Deutsche Bank", "Bevestiging van betaling aan ABN AMRO door dhr. Rutger Verhoeven."]}' http://localhost:5000/ner_api/v0.1/ner
@@ -70,29 +71,30 @@ def ner():
             assert len(kv_pair) == 1
 
             e_value, e_type = kv_pair[0]
-
+            pdb.set_trace()
             if e_type[0] == 'B':
                 #if a entity is still active, close it
                 if active_e_type:
                     curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
                     curr_res['entities'].append(curr_entity)
+                    active_e_value = '' #* bug fixed
                 beginning_offset = curr_offset
                 active_e_type= e_type[2:]
-                active_e_value += e_value + ' '
+                active_e_value += re.sub(r'[^\w\s]', '', e_value) + ' ' #* bug fixed: remove punctuations from entity values
             elif e_type[0] == 'I':
                 #treat it as a beginner if the beginner is not present
                 if not active_e_type:
                     beginning_offset = curr_offset
                     active_e_type= e_type[2:]
-                    active_e_value += e_value + ' '
+                    active_e_value += re.sub(r'[^\w\s]', '', e_value) + ' '
                 elif e_type[2:] == active_e_type:
-                    active_e_value += e_value + ' '
+                    active_e_value += re.sub(r'[^\w\s]', '', e_value) + ' '
                 else:
                     curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
                     curr_res['entities'].append(curr_entity)
                     beginning_offset = curr_offset
                     active_e_type= e_type[2:]
-                    active_e_value += e_value + ' '
+                    active_e_value += re.sub(r'[^\w\s]', '', e_value) + ' '
             elif e_type[0] == 'O' and active_e_type:
                 curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
                 curr_res['entities'].append(curr_entity)
