@@ -43,6 +43,8 @@ _SHORT_TO_TYPE = {'PER': 'PERSON',
 
 # curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Vincenzo G. Fonzi è nato a Caserta il 13/08/1983", "Il seguente documento è firmato in calce per il signor Di Marzio.", "Conferma di avvenuto pagamento a Poste Italiane da parte del sig. Giuseppe Maria Boccardi."]}' http://localhost:5000/ner_api/v0.1/ner
 # curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Maria Santos è nata a Cardenas il 13/08/1983", "The following documents were signed by John Stewart at Berlin headquarters of Deutsche Bank", "Bevestiging van betaling aan ABN AMRO door dhr. Rutger Verhoeven."]}' http://localhost:5000/ner_api/v0.1/ner
+# curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Il sig. Francesco Antonio Di Marco lavora presso la sede centrale di Enel a Roma", "Ms. Deschamps owns a manor on the Alps in Switzerland", "David Rutte heeft twee rekeningen bij de Rabobank"]}' http://localhost:5000/ner_api/v0.1/ner
+
 
 @app.route('/ner_api/v0.1/ner', methods=['POST'])
 def ner():
@@ -51,6 +53,7 @@ def ner():
     model = model_dict['NERmodel']
 
     #model = NERModel('bert', SetupParameters.ITA_MODEL, args={'no_cache': True, 'use_cached_eval_features': False})
+
     predictions, _ = model.predict(input_strings)
 
     assert len(predictions) == len(input_strings)
@@ -71,7 +74,7 @@ def ner():
             assert len(kv_pair) == 1
 
             e_value, e_type = kv_pair[0]
-            pdb.set_trace()
+            #pdb.set_trace()
             if e_type[0] == 'B':
                 #if a entity is still active, close it
                 if active_e_type:
