@@ -3,10 +3,10 @@ import json
 import logging
 import os
 import pdb
-import re
 import sys
 import time
 
+from utils.preprocessing import NERSeparatePunctuations
 from flask import Flask, abort, jsonify, make_response, request
 from flask_cors import CORS
 from simpletransformers.ner.ner_model import NERModel
@@ -49,10 +49,10 @@ _SHORT_TO_TYPE = {'PER': 'PERSON',
 @app.route('/ner_api/v0.1/ner', methods=['POST'])
 def ner():
     start = time.time()
-    input_strings = request.get_json()['strings']
+    raw_input_strings = request.get_json()['strings']
     model = model_dict['NERmodel']
-
-    #model = NERModel('bert', SetupParameters.ITA_MODEL, args={'no_cache': True, 'use_cached_eval_features': False})
+    preprocesser = NERSeparatePunctuations()
+    input_strings = preprocesser.preprocess(raw_input_strings)
 
     predictions, _ = model.predict(input_strings)
 
@@ -64,7 +64,7 @@ def ner():
         curr_res['sentence'] = s
         curr_res['entities'] = []
         curr_offset = 0
-        #for multi-word entities
+        #for multi-words entities
         beginning_offset = None
         active_e_type = None
         active_e_value = ''
@@ -80,24 +80,24 @@ def ner():
                 if active_e_type:
                     curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
                     curr_res['entities'].append(curr_entity)
-                    active_e_value = '' #* bug fixed
+                    active_e_value = ''
                 beginning_offset = curr_offset
                 active_e_type= e_type[2:]
-                active_e_value += re.sub(r'[^\w\s]', '', e_value) + ' ' #* bug fixed: remove punctuations from entity values
+                active_e_value += e_value + ' ' #! active_e_value += re.sub(r'[^\w\s]', '', e_value)
             elif e_type[0] == 'I':
                 #treat it as a beginner if the beginner is not present
                 if not active_e_type:
                     beginning_offset = curr_offset
-                    active_e_type= e_type[2:]
-                    active_e_value += re.sub(r'[^\w\s]', '', e_value) + ' '
+                    active_e_type = e_type[2:]
+                    active_e_value += e_value + ' ' #! active_e_value += re.sub(r'[^\w\s]', '', e_value)
                 elif e_type[2:] == active_e_type:
-                    active_e_value += re.sub(r'[^\w\s]', '', e_value) + ' '
+                    active_e_value += e_value + ' ' #! active_e_value += re.sub(r'[^\w\s]', '', e_value)
                 else:
                     curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
                     curr_res['entities'].append(curr_entity)
                     beginning_offset = curr_offset
-                    active_e_type= e_type[2:]
-                    active_e_value += re.sub(r'[^\w\s]', '', e_value) + ' '
+                    active_e_type = e_type[2:]
+                    active_e_value += e_value + ' ' #! active_e_value += re.sub(r'[^\w\s]', '', e_value)
             elif e_type[0] == 'O' and active_e_type:
                 curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
                 curr_res['entities'].append(curr_entity)
@@ -107,11 +107,21 @@ def ner():
 
             #offset takes into account also the space
             curr_offset += len(e_value) + 1
+            #pdb.set_trace()
             #if last prediction for that string, then save the active entities
-            if curr_offset > len(s) and active_e_type:
+            if curr_offset >= len(s) and active_e_type:
                 curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
                 curr_res['entities'].append(curr_entity)
         results.append(curr_res)
+
+    #pdb.set_trace()
+    #get original strings (no preprocessed) and adjust the entities offset
+    preprocesser.adjustEntitiesOffset([r['entities'] for r in results])
+    for r, original in zip(results, raw_input_strings):
+        r['sentence'] = original
+        #r['entities'] = e
+
+    #pdb.set_trace() #* debug
     end = time.time()
     execution_t = end-start
 
