@@ -8,10 +8,9 @@ NER with transformer
 * output: JSON object containing the extracted entities
 
 * example of usage:
+```console
 $ curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Mario Rossi è nato a Busto Arsizio", "Il signor Di Marzio ha effettuato un pagamento a Matteo", "Marco e Luca sono andati a Magenta"]}' http://localhost:5000/ner_api/v0.1/ner
 
-* response:
-```
 {
   "results": [
     {
