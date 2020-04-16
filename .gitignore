@@ -4,5 +4,5 @@ rest/__pycache__/
 checkpoints/
 rest/state_dict/
 rest/log/
-it/
-multilang/
+rest/it/
+rest/multilang/
