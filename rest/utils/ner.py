@@ -30,7 +30,7 @@ _REGEX_PATTERNS = {'IT_FISCAL_CODE': _CLEAN_START_REGEX + '[A-Z]{6}[0-9]{2}[A-E,
                     'EU_IBAN': _CLEAN_START_REGEX + '[A-Z]{2}?[ ]?[0-9]{2}[]?[0-9]{4}[ ]?[0-9]{4}[ ]?[0-9]{4}[ ]?[0-9]{4}[ ]?[0-9]{4}' + _CLEAN_END_REGEX,
                     'NL_CITIZEN_SERVICE_NUMBER': _CLEAN_START_REGEX + '[0-9]{9}' + _CLEAN_END_REGEX ,
                     'UK_NATIONAL_ID_NUMBER': _CLEAN_START_REGEX + '[A-CEGHJ-PR-TW-Z][A-CEGHJ-NPR-TW-Z]{1}[0-9]{6}[A-DFM]?' + _CLEAN_END_REGEX,
-                    'EU_PHONE_NUMBER': _CLEAN_START_REGEX + '([+]*[(]?[0-9]{1,4}[)]?){0,1}([-\s\./0-9]+){10}' + _CLEAN_END_REGEX,
+                    'EU_PHONE_NUMBER': _CLEAN_START_REGEX + '([+]*[(]?[0-9]{1,4}[)]?){0,1}([-\s\.0-9]+){10}' + _CLEAN_END_REGEX,
                     'EMAIL_ADDRESS': _CLEAN_START_REGEX + '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+' + _CLEAN_END_REGEX,
                     'IPV4_ADDRESS': _CLEAN_START_REGEX + '((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}' + _CLEAN_END_REGEX
                 }
@@ -113,24 +113,26 @@ def make_ner_dict(input_strings, predictions):
 
 def find_from_regex(ner_dict):
     """Find matches of regex patterns from ner_dict and insert the new entities found by means of the regex.
-    For each string only the first occurence of each regex is returned.
     
     Arguments:
-        input_strings {list} -- list of strings to analyze
+        ner_dict {list} -- list of ner dictionaries where to insert new regex-found entities
     """
 
     for item in ner_dict:
         for field, regex in _REGEX_PATTERNS.items():
-            match = re.search(regex, item['sentence'])
-            if match:
-                matched_string = match.group(0)
-                # remove initial or final space/punctuation if it was catched by regex
-                if matched_string[0] in '.,: ':
-                    matched_string = matched_string[1:]
-                if matched_string[-1] in '., ':
-                    matched_string = matched_string[:-1]
-                span = match.span(0)
-                item['entities'].append({'type': field, 'value': matched_string, 'offset': span[0]})
+            for match in re.finditer(regex, item['sentence']):
+            #   match = re.search(regex, item['sentence'])
+                if match:
+                    matched_string = match.group(0)
+                    offset = match.span(0)[0]
+                    # remove initial or final space/punctuation if it was catched by regex
+                    if matched_string[0] in '.,: ':
+                        matched_string = matched_string[1:]
+                        offset += 1
+                    if matched_string[-1] in '., ':
+                        matched_string = matched_string[:-1]
+                    
+                    item['entities'].append({'type': field, 'value': matched_string, 'offset': offset})
     
     return ner_dict
 

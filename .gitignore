@@ -6,4 +6,5 @@ rest/state_dict/
 rest/log/
 rest/it/
 rest/multilang/
+rest/multilang_uncased/
 cache_dir/

@@ -53,7 +53,7 @@ def ner():
 
     # define the preprocesser to use and apply it
     preprocesser = NERSeparatePunctuations()
-    input_strings = preprocesser.preprocess(raw_input_strings)
+    input_strings = preprocesser.preprocess(raw_input_strings, do_lower_case=True)
 
     # use the trained model to extract the PER, LOC, ORG, MISC entity types
     predictions, _ = model.predict(input_strings)
@@ -63,7 +63,7 @@ def ner():
     ner_dict = make_ner_dict(input_strings, predictions)
 
     # get original strings (no preprocessed) and adjust the entities offset
-    preprocesser.adjustEntitiesOffset([r['entities'] for r in ner_dict])
+    preprocesser.adjustEntitiesOffset([r['entities'] for r in ner_dict], adjust_case=True)
     for r, original in zip(ner_dict, raw_input_strings):
         r['sentence'] = original
 

@@ -4,5 +4,7 @@ Changelog:
     - integrated new entities: IT_FISCAL_CODE, EU_IBAN, 
                                 NL_CITIZEN_SERVICE_NUMBER, UK_NATIONAL_ID_NUMBER, 
                                 EU_PHONE_NUMBER, EMAIL_ADDRESS, IPV4_ADDRESS
+    - lowercase for preprocessing added
+    - case-sensitive post processing integrated
     - added documentations for methods and functions
     - added file 'input_example.txt' for testing purposes
