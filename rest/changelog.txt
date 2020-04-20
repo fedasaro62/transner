@@ -1,6 +1,6 @@
 Changelog:
     - transner v0.3
-    - REST API path changed to '/ner_api/v0.3/ner'
+    - REST API path changed to '/transner/v0.3/ner'
     - integrated new entities: IT_FISCAL_CODE, EU_IBAN, 
                                 NL_CITIZEN_SERVICE_NUMBER, UK_NATIONAL_ID_NUMBER, 
                                 EU_PHONE_NUMBER, EMAIL_ADDRESS, IPV4_ADDRESS

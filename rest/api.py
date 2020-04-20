@@ -24,7 +24,7 @@ model_dict = {'NERmodel': None}
 
 
 
-@app.route('/ner_api/v0.3/ner', methods=['POST'])
+@app.route('/transner/v0.3/ner', methods=['POST'])
 def ner():
     """This API returns the extracted entities for each sentence.
     

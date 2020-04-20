@@ -6,7 +6,7 @@
     "Il seguente documento è firmato in calce per il signor Di Marzio.", 
     "Conferma di avvenuto pagamento a Poste Italiane da parte del sig. Giuseppe Maria Boccardi."]
 } 
-http://localhost:5000/ner_api/v0.3/ner
+http://localhost:5000/transner/v0.3/ner
 
 
 {"strings": 
@@ -14,7 +14,7 @@ http://localhost:5000/ner_api/v0.3/ner
     "The following documents were signed by John Stewart at Berlin headquarters of Deutsche Bank", 
     "Bevestiging van betaling aan ABN AMRO door dhr. Rutger Verhoeven."]
 }
-http://localhost:5000/ner_api/v0.3/ner
+http://localhost:5000/transner/v0.3/ner
 
 
 {"strings": 
@@ -22,12 +22,12 @@ http://localhost:5000/ner_api/v0.3/ner
     "Ms. Deschamps owns a manor on the Alps in Switzerland", 
     "David Rutte heeft twee rekeningen bij de Rabobank"]
 }
-http://localhost:5000/ner_api/v0.3/ner
+http://localhost:5000/trasner/v0.3/ner
 
 
 - Italian for additional entities (PER, LOC, ORG, MISC, IBAN, SSID etc.):
 {"strings": 
     ["Il sig. Francesco Antonio Di Marco è nato a Milano, codice fiscale DMRFNC80E01F205B, numero di telefono +39 0865989886, email di lavoro francesco.dimarco@hotmail.com, DMRGZC54E90F205E"]
 } 
-http://localhost:5000/ner_api/v0.3/ner
+http://localhost:5000/transner/v0.3/ner
 
