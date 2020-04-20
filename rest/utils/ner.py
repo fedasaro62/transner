@@ -23,7 +23,7 @@ _SHORT_TO_TYPE = {'PER': 'PERSON',
 # List of regex to apply.
 # The first two regex ensures that no substrings are matched, only strings starting with space, end of the sentence or final punctuations and  ending with the same.
 # An example is a phone number like '1234567890', inside this also the NL_CITIZEN_SERVICE_NUMBER '123456789'could be matched otherwise.
-####################################
+########################################################################################################################################################
 _CLEAN_START_REGEX = '(\s|^|[.,:])' 
 _CLEAN_END_REGEX = '(\s|$|[.,])'
 _REGEX_PATTERNS = {'IT_FISCAL_CODE': _CLEAN_START_REGEX + '[A-Z]{6}[0-9]{2}[A-E,H,L,M,P,R-T][0-9]{2}[A-Z0-9]{5}' + _CLEAN_END_REGEX,
