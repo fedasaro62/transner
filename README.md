@@ -2,7 +2,7 @@
 NER with transformer
 
 
-## route: /api/v0.1/ner
+## route: /transner/v0.3/ner
 * input: JSON object containing a list of strings {“strings”: [...]}
     * This interface expects sentences taken eventually from longer documents or records from a table. Please check with Pipple if they are willing to contribute to the provision of a sentence splitter for longer documents. Otherwise, we will implement it ourselves
 * output: JSON object containing the extracted entities
