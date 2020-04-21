@@ -87,5 +87,5 @@ def not_found(error):
 
 if __name__ == '__main__':
 
-    model_dict['NERmodel'] = NERModel('bert', SetupParameters.IT_MODEL, use_cuda=False, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True})
+    model_dict['NERmodel'] = NERModel('bert', SetupParameters.PRETRAINED_MODEL, use_cuda=False, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True})
     app.run(host='0.0.0.0', debug=True, port=5000)
