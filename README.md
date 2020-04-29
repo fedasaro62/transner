@@ -6,7 +6,7 @@ NER with transformer
 
 * example of usage:
 ```console
-$ uasge.py --strings "Mario Rossi è nato a Busto Arsizio" \
+$ usage.py --strings "Mario Rossi è nato a Busto Arsizio" \
                      "Il signor Di Marzio ha effettuato un pagamento a Matteo" \
                      "Marco e Luca sono andati a Magenta"
 
