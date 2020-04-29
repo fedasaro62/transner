@@ -10,3 +10,4 @@ cache_dir/
 config.py
 rest_interface.py
 api_doc
+rest_examples.txt
