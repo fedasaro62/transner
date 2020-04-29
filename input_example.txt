@@ -22,7 +22,7 @@ http://localhost:5000/transner/v0.3/ner
     "Ms. Deschamps owns a manor on the Alps in Switzerland", 
     "David Rutte heeft twee rekeningen bij de Rabobank"]
 }
-http://localhost:5000/trasner/v0.3/ner
+http://localhost:5000/transner/v0.3/ner
 
 
 - Italian for additional entities (PER, LOC, ORG, MISC, IBAN, SSID etc.):

@@ -74,6 +74,7 @@ class NERSeparatePunctuations(NERPreprocessing):
         return proc_strings
 
 
+    #TODO solve bug
     def adjustEntitiesOffset(self, entities, adjust_case=False):
         """Readjust the entities offset due to preprocessing of the original strings
 
@@ -83,7 +84,6 @@ class NERSeparatePunctuations(NERPreprocessing):
         """
 
         assert len(entities) == len(self.original)
-
         for s, e_list, c_list in zip(self.original, entities, self.changes):
             for e in e_list:
                 curr_count = 0
@@ -91,16 +91,17 @@ class NERSeparatePunctuations(NERPreprocessing):
                     #pdb.set_trace()
                     if e['offset'] >= c:
                         curr_count += 1
+                    else:
+                        break
                 e['offset'] -= curr_count
 
-
-            if adjust_case:
-                # copy the entities values from the original string
-                for s, e_list in zip(self.original, entities):
-                    for e in e_list:
-                        start_pos = e['offset']
-                        end_pos = start_pos + len(e['value'])
-                        e['value'] = s[start_pos:end_pos]
-                        # clean possible white spaces (unlikely to happen)
-                        if e['value'][-1] == ' ':
-                            e['value'] = e['value'][:-1]
+        if adjust_case:
+            # copy the entities values from the original string
+            for s, e_list in zip(self.original, entities):
+                for e in e_list:
+                    start_pos = e['offset']
+                    end_pos = start_pos + len(e['value'])
+                    e['value'] = s[start_pos:end_pos]
+                    # clean possible white spaces (unlikely to happen)
+                    if e['value'][-1] == ' ':
+                        e['value'] = e['value'][:-1]
