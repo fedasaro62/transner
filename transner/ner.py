@@ -49,6 +49,10 @@ class Transner():
         self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True})
         self.preprocesser = NERSeparatePunctuations()
 
+    
+    def reset_preprocesser(self):
+        self.preprocesser.reset()
+
 
 
     def ner(self, input_strings, apply_regex=False):
@@ -187,7 +191,7 @@ class Transner():
 
                     #offset takes into account also the space
                     curr_offset += len(e_value) + 1
-                    #pdb.set_trace()
+
                     #if last prediction for that string, then save the active entities
                     if curr_offset >= len(s) and active_e_type:
                         curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}

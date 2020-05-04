@@ -31,12 +31,17 @@ class NERPreprocessing(ABC):
         pass
 
 
-class NERSeparatePunctuations(NERPreprocessing):
+class NERSeparatePunctuations():
     """This class contains the splitting for composite punctuation words like 'dell'Italia', 'L'America'.
     """
     def __init__(self):
         super(NERSeparatePunctuations, self).__init__()
+        self.reset()
+
+    def reset(self):
         self.puncts = string.punctuation
+        self.changes = []
+        self.original = []
 
 
     def preprocess(self, strings, do_lower_case=False):
@@ -55,7 +60,6 @@ class NERSeparatePunctuations(NERPreprocessing):
             curr_changes = []
             add_ws = False
             for offset, ch in enumerate(s):
-                #pdb.set_trace()
                 if add_ws:
                     if ch != ' ':
                         proc_string += ' '
@@ -71,6 +75,7 @@ class NERSeparatePunctuations(NERPreprocessing):
                 proc_string = proc_string.lower()
             proc_strings.append(proc_string)
             self.changes.append(curr_changes)
+
         return proc_strings
 
 
@@ -82,13 +87,11 @@ class NERSeparatePunctuations(NERPreprocessing):
             entities {list} -- List of entities, ordered by the original strings indexes, for each string having the format [{["offset": ]}]
             adjust_case {boolean} -- if True, the value of each entity is copied from the span in the original string (to avoid case mismatch)
         """
-
         assert len(entities) == len(self.original)
         for s, e_list, c_list in zip(self.original, entities, self.changes):
             for e in e_list:
                 curr_count = 0
                 for c in c_list:
-                    #pdb.set_trace()
                     if e['offset'] >= c:
                         curr_count += 1
                     else:
