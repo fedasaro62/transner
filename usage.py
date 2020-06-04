@@ -7,6 +7,8 @@ from transner import Transner
 def main(strings):
     model = Transner(pretrained_model='multilang_uncased', use_cuda=False)
     ner_dict = model.ner(strings, apply_regex=True)
+
+    ner_dict = model.find_from_gazetters(ner_dict)
     print(ner_dict)
 
 
@@ -18,7 +20,7 @@ if __name__ == '__main__':
 
         $python usage.py --strings \
             "Mario è nato a Milano" \
-            "Nicola è andato a Firenze"
+            "The war of Orleans"
     """
 
     parser = argparse.ArgumentParser()

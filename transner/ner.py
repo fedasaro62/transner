@@ -1,9 +1,15 @@
+import os
 import pdb
 import re
-import os
 
+import pandas as pd
 from simpletransformers.ner.ner_model import NERModel
+
 from .utils import NERSeparatePunctuations
+
+
+WORLD_CITIES_DB = 'transner/worldcities/worldcities.csv'
+RELIGIONS_FILE = 'transner/religions.txt'
 
 
 _TARGET_TO_LABEL = {'O': 0,
@@ -48,8 +54,20 @@ class Transner():
         pretrained_path =  os.path.join('transner/', pretrained_model)
         self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True})
         self.preprocesser = NERSeparatePunctuations()
+        worlddb = pd.read_csv(WORLD_CITIES_DB)
+        self.cities_set = set(worlddb['city'].str.lower())
+        self.cities_set = self.cities_set.union(set(worlddb['city_ascii'].str.lower()))
+
+        self.religions_set = set()
+        file = open(RELIGIONS_FILE, 'r') 
+        lines = file.readlines()
+        for line in lines:
+            if line.strip() != '':
+                self.religions_set.add(line.strip().lower())
+
 
     
+
     def reset_preprocesser(self):
         self.preprocesser.reset()
 
@@ -83,7 +101,6 @@ class Transner():
         self.preprocesser.adjustEntitiesOffset([r['entities'] for r in ner_dict], adjust_case=True)
         for r, original in zip(ner_dict, input_strings):
             r['sentence'] = original
-
         if apply_regex:
             ner_dict = self.find_from_regex(ner_dict)
 
@@ -115,6 +132,34 @@ class Transner():
                         item['entities'].append({'type': field, 'value': matched_string, 'offset': offset})
         
         return ner_dict
+
+
+
+    def find_from_gazetters(self, ner_dict):
+    
+        # check religions
+        for item in ner_dict:
+            words_list = item['sentence'].lower().split()
+            for word in words_list:
+                if word in self.religions_set:
+                    offset = item['sentence'].lower().index(word)
+                    item['entities'].append({'type': 'RELIGION', 'value': item['sentence'][offset:offset+len(word)], 'offset': offset})
+
+        # check nested LOC in MISCELLANEOUS 
+        for item in ner_dict:
+            for entity in item['entities']:
+                if entity['type'] == 'MISCELLANEOUS':
+                    #generate substrings and check if there is at least one contained in gazeetters
+                    words_list = entity['value'].lower().split()
+                    substrings = [words_list[i: j] for i in range(len(words_list)) for j in range(i + 1, len(words_list) + 1)]
+                    for substring in substrings:
+                        curr_str = ' '.join(substring)
+                        if curr_str in self.cities_set:
+                            offset = entity['value'].lower().index(curr_str)
+                            item['entities'].append({'type': 'LOC', 'value': entity['value'][offset:offset+len(curr_str)], 'offset': offset+entity['offset']})
+
+        return ner_dict
+
 
 
 
