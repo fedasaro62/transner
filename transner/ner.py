@@ -65,7 +65,6 @@ class Transner():
             if line.strip() != '':
                 self.religions_set.add(line.strip().lower())
 
-
     
 
     def reset_preprocesser(self):
@@ -73,7 +72,7 @@ class Transner():
 
 
 
-    def ner(self, input_strings, apply_regex=False):
+    def ner(self, input_strings, apply_regex=False, apply_gazetteers=False):
         """This function produces a dictionary for the recognized entities with the format:
             {'sentence': ..., 
             'entities' :[
@@ -103,6 +102,8 @@ class Transner():
             r['sentence'] = original
         if apply_regex:
             ner_dict = self.find_from_regex(ner_dict)
+        if apply_gazetteers:
+            ner_dict = self.find_from_gazetteers(ner_dict)
 
         return ner_dict
 
@@ -135,7 +136,7 @@ class Transner():
 
 
 
-    def find_from_gazetters(self, ner_dict):
+    def find_from_gazetteers(self, ner_dict):
     
         # check religions
         for item in ner_dict:
