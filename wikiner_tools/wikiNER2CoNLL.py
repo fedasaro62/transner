@@ -113,7 +113,6 @@ if __name__ == '__main__':
         # it can happen that the dataset is not perfectly divisible
         train_size += adjust_sizes(train_size, val_size, test_size)
         
-        pdb.set_trace()
         if args.randsplit:
             train_set, val_set, test_set = random_split(dataset, [train_size, val_size, test_size])
         else:
