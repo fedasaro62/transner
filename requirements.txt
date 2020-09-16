@@ -31,12 +31,12 @@ scikit-learn==0.22.2.post1
 scipy==1.4.1
 sentencepiece==0.1.85
 seqeval==0.0.12
-simpletransformers==0.22.0
+simpletransformers==0.46.2
 six==1.14.0
 tensorboardX==2.0
-tokenizers==0.5.2
-torch==1.4.0
-tqdm==4.43.0
-transformers==2.5.1
+tokenizers==0.8.1.rc2
+torch==1.6.0
+tqdm==4.47.0
+transformers==3.1.0
 urllib3==1.25.8
 Werkzeug==1.0.0

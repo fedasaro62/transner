@@ -10,9 +10,9 @@ import numpy as np
 import torch.nn.functional as F
 from .utils import NERSeparatePunctuations
 
-
-WORLD_CITIES_DB = 'transner/worldcities/worldcities.csv'
-RELIGIONS_FILE = 'transner/religions.txt'
+transner_folder = '/'.join(__file__.split('/')[:-1])
+WORLD_CITIES_DB = os.path.join(transner_folder, 'worldcities/worldcities.csv')
+RELIGIONS_FILE = os.path.join(transner_folder, 'religions.txt')
 
 
 _TARGET_TO_LABEL = {'O': 0,
@@ -54,8 +54,7 @@ _RULE_BASED_SCORE = 0.90
 
 class Transner():
 
-    def __init__(self, pretrained_model, use_cuda):
-        pretrained_path =  os.path.join('transner/', pretrained_model)
+    def __init__(self, pretrained_path, use_cuda):
         self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True})
         self.preprocesser = NERSeparatePunctuations()
         worlddb = pd.read_csv(WORLD_CITIES_DB)
@@ -94,9 +93,14 @@ class Transner():
         processed_input = self.preprocesser.preprocess(input_strings, do_lower_case=True)
         # extract PER, LOC, ORG, MISC entity types
         (predictions, logits) = self.model.predict(processed_input)
-        #pdb.set_trace()
-
-        conf_scores = F.softmax(torch.tensor(logits), dim=-1).max(dim=-1).values
+        conf_scores = [
+                        [
+                            F.softmax(torch.tensor(logs), dim=-1).max().item()
+                            for curr_item in curr_logits
+                            for e_val, logs in curr_item.items()
+                        ]
+                        for curr_logits in logits
+                    ]
 
         assert len(predictions) == len(input_strings), 'Batch sizes do not match'
         assert len(predictions) == len(conf_scores), 'Batch sizes do not match'
@@ -195,9 +199,8 @@ class Transner():
             result_dict = []
             curr_res = {}
             for s, prediction, scores in zip(strings, predictions, conf_scores):
-                #todo from here
-                effective_scores = scores[:len(prediction)]
-                #assert len(prediction) == len(scores), 'Prediction and scores size mismatch'
+                
+                assert len(prediction) == len(scores), 'Prediction and scores size mismatch'
                 curr_res = dict()
 
                 curr_res['sentence'] = s
@@ -209,7 +212,7 @@ class Transner():
                 active_e_value = ''
                 active_e_scores = []
 
-                for e_pred, score in zip(prediction, effective_scores):
+                for e_pred, score in zip(prediction, scores):
                     kv_pair = list(e_pred.items())
                     assert len(kv_pair) == 1
 
