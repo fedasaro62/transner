@@ -5,10 +5,10 @@ from transner import Transner
 
 
 def main(strings):
-    model = Transner(pretrained_model='multilang_uncased', use_cuda=False)
-    ner_dict = model.ner(strings, apply_regex=True)
 
-    ner_dict = model.find_from_gazetters(ner_dict)
+    model = Transner(pretrained_model='multilang_uncased', use_cuda=False)
+    ner_dict = model.ner(strings, apply_regex=True, apply_gazetteers=True)
+
     print(ner_dict)
 
 
@@ -16,12 +16,6 @@ def main(strings):
 
 
 if __name__ == '__main__':
-    """Input example:
-
-        $python usage.py --strings \
-            "Mario è nato a Milano" \
-            "The war of Orleans"
-    """
 
     parser = argparse.ArgumentParser()
 

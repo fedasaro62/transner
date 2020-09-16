@@ -5,6 +5,9 @@ import re
 import pandas as pd
 from simpletransformers.ner.ner_model import NERModel
 
+import torch
+import numpy as np
+import torch.nn.functional as F
 from .utils import NERSeparatePunctuations
 
 
@@ -45,6 +48,7 @@ _REGEX_PATTERNS = {'IT_FISCAL_CODE': _CLEAN_START_REGEX + '[A-Z]{6}[0-9]{2}[A-E,
                     'EMAIL_ADDRESS': _CLEAN_START_REGEX + '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+' + _CLEAN_END_REGEX,
                     'IPV4_ADDRESS': _CLEAN_START_REGEX + '((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}' + _CLEAN_END_REGEX
                 }
+_RULE_BASED_SCORE = 0.90
 
 
 
@@ -65,11 +69,9 @@ class Transner():
             if line.strip() != '':
                 self.religions_set.add(line.strip().lower())
 
-    
 
     def reset_preprocesser(self):
         self.preprocesser.reset()
-
 
 
     def ner(self, input_strings, apply_regex=False, apply_gazetteers=False):
@@ -91,10 +93,15 @@ class Transner():
 
         processed_input = self.preprocesser.preprocess(input_strings, do_lower_case=True)
         # extract PER, LOC, ORG, MISC entity types
-        predictions = self.model.predict(processed_input)[0]
-        assert len(predictions) == len(input_strings)
+        (predictions, logits) = self.model.predict(processed_input)
+        #pdb.set_trace()
 
-        ner_dict = self.make_ner_dict(processed_input, predictions)
+        conf_scores = F.softmax(torch.tensor(logits), dim=-1).max(dim=-1).values
+
+        assert len(predictions) == len(input_strings), 'Batch sizes do not match'
+        assert len(predictions) == len(conf_scores), 'Batch sizes do not match'
+
+        ner_dict = self.make_ner_dict(processed_input, predictions, conf_scores)
 
         # post processing: get original strings (no preprocessed) and adjust the entities offset
         self.preprocesser.adjustEntitiesOffset([r['entities'] for r in ner_dict], adjust_case=True)
@@ -106,7 +113,6 @@ class Transner():
             ner_dict = self.find_from_gazetteers(ner_dict)
 
         return ner_dict
-
 
 
     def find_from_regex(self, ner_dict):
@@ -130,10 +136,12 @@ class Transner():
                         if matched_string[-1] in '., ':
                             matched_string = matched_string[:-1]
                         
-                        item['entities'].append({'type': field, 'value': matched_string, 'offset': offset})
+                        item['entities'].append({'type': field,
+                                                'confidence': round(_RULE_BASED_SCORE, 2),
+                                                'value': matched_string, 
+                                                'offset': offset})
         
         return ner_dict
-
 
 
     def find_from_gazetteers(self, ner_dict):
@@ -144,7 +152,10 @@ class Transner():
             for word in words_list:
                 if word in self.religions_set:
                     offset = item['sentence'].lower().index(word)
-                    item['entities'].append({'type': 'RELIGION', 'value': item['sentence'][offset:offset+len(word)], 'offset': offset})
+                    item['entities'].append({'type': 'RELIGION', 
+                                            'value': item['sentence'][offset:offset+len(word)], 
+                                            'confidence': round(_RULE_BASED_SCORE, 2),
+                                            'offset': offset})
 
         # check nested LOC in MISCELLANEOUS 
         for item in ner_dict:
@@ -157,14 +168,15 @@ class Transner():
                         curr_str = ' '.join(substring)
                         if curr_str in self.cities_set:
                             offset = entity['value'].lower().index(curr_str)
-                            item['entities'].append({'type': 'LOC', 'value': entity['value'][offset:offset+len(curr_str)], 'offset': offset+entity['offset']})
+                            item['entities'].append({'type': 'LOC', 
+                                                    'value': entity['value'][offset:offset+len(curr_str)], 
+                                                    'confidence': round(_RULE_BASED_SCORE, 2),
+                                                    'offset': offset+entity['offset']})
 
         return ner_dict
 
 
-
-
-    def make_ner_dict(self, strings, predictions):
+    def make_ner_dict(self, strings, predictions, conf_scores):
             """[summary]
 
             Arguments:
@@ -182,7 +194,10 @@ class Transner():
             """
             result_dict = []
             curr_res = {}
-            for s, prediction in zip(strings, predictions):
+            for s, prediction, scores in zip(strings, predictions, conf_scores):
+                #todo from here
+                effective_scores = scores[:len(prediction)]
+                #assert len(prediction) == len(scores), 'Prediction and scores size mismatch'
                 curr_res = dict()
 
                 curr_res['sentence'] = s
@@ -192,8 +207,9 @@ class Transner():
                 beginning_offset = None
                 active_e_type = None
                 active_e_value = ''
+                active_e_scores = []
 
-                for e_pred in prediction:
+                for e_pred, score in zip(prediction, effective_scores):
                     kv_pair = list(e_pred.items())
                     assert len(kv_pair) == 1
 
@@ -202,31 +218,45 @@ class Transner():
                     if e_type[0] == 'B':
                         #if a entity is still active, close it
                         if active_e_type:
-                            curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
-                            # often the string "mario è" is tagged with a person. This operation clean this problem
+                            curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
+                                        'value': active_e_value[:-1],
+                                        'confidence': round(np.mean(active_e_scores), 2),
+                                        'offset': beginning_offset}
+                            # often the string "mario è" is tagged with a person. The following operation manually fixes this problem
                             if curr_entity['value'][-2:] == ' è':
                                 curr_entity['value'] = curr_entity['value'][:-2] 
                             curr_res['entities'].append(curr_entity)
                             active_e_value = ''
+                            active_e_scores = []
                         beginning_offset = curr_offset
                         active_e_type= e_type[2:]
-                        active_e_value += e_value + ' ' #! active_e_value += re.sub(r'[^\w\s]', '', e_value)
+                        active_e_value += e_value + ' '
+                        active_e_scores.append(score)
                     elif e_type[0] == 'I':
                         #treat it as a beginner if the beginner is not present
                         if not active_e_type:
                             beginning_offset = curr_offset
                             active_e_type = e_type[2:]
-                            active_e_value += e_value + ' ' #! active_e_value += re.sub(r'[^\w\s]', '', e_value)
+                            active_e_value += e_value + ' '
+                            active_e_scores.append(score)
                         elif e_type[2:] == active_e_type:
-                            active_e_value += e_value + ' ' #! active_e_value += re.sub(r'[^\w\s]', '', e_value)
+                            active_e_value += e_value + ' '
+                            active_e_scores.append(score)
                         else:
-                            curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
+                            curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
+                                        'value': active_e_value[:-1],
+                                        'confidence': round(np.mean(active_e_scores), 2),
+                                        'offset': beginning_offset}
                             curr_res['entities'].append(curr_entity)
                             beginning_offset = curr_offset
                             active_e_type = e_type[2:]
-                            active_e_value += e_value + ' ' #! active_e_value += re.sub(r'[^\w\s]', '', e_value)
+                            active_e_value = e_value + ' ' #here previous version was +=
+                            active_e_scores = [score]
                     elif e_type[0] == 'O' and active_e_type:
-                        curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
+                        curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
+                                    'value': active_e_value[:-1], 
+                                    'confidence': round(np.mean(active_e_scores), 2),
+                                    'offset': beginning_offset}
                         # often the string "mario è" is tagged with a person. This operation clean this problem
                         if curr_entity['value'][-2:] == ' è':
                             curr_entity['value'] = curr_entity['value'][:-2] 
@@ -234,13 +264,17 @@ class Transner():
                         beginning_offset = None
                         active_e_type = None
                         active_e_value = ''
+                        active_e_scores = [score]
 
                     #offset takes into account also the space
                     curr_offset += len(e_value) + 1
 
                     #if last prediction for that string, then save the active entities
                     if curr_offset >= len(s) and active_e_type:
-                        curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 'value': active_e_value[:-1], 'offset': beginning_offset}
+                        curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
+                                    'value': active_e_value[:-1], 
+                                    'confidence': round(np.mean(active_e_scores), 2),
+                                    'offset': beginning_offset}
                         curr_res['entities'].append(curr_entity)
                 result_dict.append(curr_res)
 

@@ -79,7 +79,6 @@ class NERSeparatePunctuations():
         return proc_strings
 
 
-    #TODO solve bug
     def adjustEntitiesOffset(self, entities, adjust_case=False):
         """Readjust the entities offset due to preprocessing of the original strings
 
