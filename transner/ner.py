@@ -54,8 +54,8 @@ _RULE_BASED_SCORE = 0.90
 
 class Transner():
 
-    def __init__(self, pretrained_path, use_cuda):
-        self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True})
+    def __init__(self, pretrained_path, use_cuda, cuda_device):
+        self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True}, cuda_device=cuda_device)
         self.preprocesser = NERSeparatePunctuations()
         worlddb = pd.read_csv(WORLD_CITIES_DB)
         self.cities_set = set(worlddb['city'].str.lower())
