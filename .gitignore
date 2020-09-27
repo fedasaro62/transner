@@ -4,8 +4,6 @@ transner/__pycache__/
 checkpoints/
 log/
 transner/it/
-transner/multilang/
-transner/multilang_uncased/
 cache_dir/
 config.py
 rest_interface.py
