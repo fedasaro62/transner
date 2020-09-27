@@ -46,7 +46,8 @@ _REGEX_PATTERNS = {'IT_FISCAL_CODE': _CLEAN_START_REGEX + '[A-Z]{6}[0-9]{2}[A-E,
                     'UK_NATIONAL_ID_NUMBER': _CLEAN_START_REGEX + '[A-CEGHJ-PR-TW-Z][A-CEGHJ-NPR-TW-Z]{1}[0-9]{6}[A-DFM]?' + _CLEAN_END_REGEX,
                     'EU_PHONE_NUMBER': _CLEAN_START_REGEX + '([+]*[(]?[0-9]{1,4}[)]?){0,1}([-\s\.0-9]+){10}' + _CLEAN_END_REGEX,
                     'EMAIL_ADDRESS': _CLEAN_START_REGEX + '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+' + _CLEAN_END_REGEX,
-                    'IPV4_ADDRESS': _CLEAN_START_REGEX + '((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}' + _CLEAN_END_REGEX
+                    'IPV4_ADDRESS': _CLEAN_START_REGEX + '((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}' + _CLEAN_END_REGEX,
+                    'URI': _CLEAN_START_REGEX + '\[URL_[0-9]+\]' + _CLEAN_END_REGEX
                 }
 _RULE_BASED_SCORE = 0.90
 
@@ -54,8 +55,8 @@ _RULE_BASED_SCORE = 0.90
 
 class Transner():
 
-    def __init__(self, pretrained_path, use_cuda):
-        self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True})
+    def __init__(self, pretrained_path, use_cuda, cuda_device):
+        self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True}, cuda_device=cuda_device)
         self.preprocesser = NERSeparatePunctuations()
         worlddb = pd.read_csv(WORLD_CITIES_DB)
         self.cities_set = set(worlddb['city'].str.lower())
