@@ -68,5 +68,6 @@ $python usage.py --strings "Mario Rossi è nato a Busto Arsizio" \
 ```
 
 ## HOW TO USE:
-Download one of the pretrained model and move it to `transner/` folder..<br>
+Download one of the pretrained model and move it to `transner/` folder..<br> or use the one in the repo after installing LFS:
+`git lfs install`
 pretrained models link: https://istitutoboella-my.sharepoint.com/:f:/g/personal/matteo_senese_linksfoundation_com/EvhOF23tja5Nuo3mw03v24oB7D14q9cjk16Ca7xF3nTm-A?e=AWpuiu
