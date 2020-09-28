@@ -55,7 +55,7 @@ _RULE_BASED_SCORE = 0.90
 
 class Transner():
 
-    def __init__(self, pretrained_path, use_cuda, cuda_device):
+    def __init__(self, pretrained_path, use_cuda, cuda_device=-1):
         self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True}, cuda_device=cuda_device)
         self.preprocesser = NERSeparatePunctuations()
         worlddb = pd.read_csv(WORLD_CITIES_DB)
@@ -63,7 +63,7 @@ class Transner():
         self.cities_set = self.cities_set.union(set(worlddb['city_ascii'].str.lower()))
 
         self.religions_set = set()
-        file = open(RELIGIONS_FILE, 'r') 
+        file = open(RELIGIONS_FILE, 'r', encoding='UTF-8') 
         lines = file.readlines()
         for line in lines:
             if line.strip() != '':
