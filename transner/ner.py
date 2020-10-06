@@ -57,7 +57,8 @@ class Transner():
 
     def __init__(self, pretrained_path, use_cuda, quantization=False, cuda_device=-1):
         self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True}, cuda_device=cuda_device)
-        if quantization:
+        if cuda_device == -1 and quantization:
+            #quantization currently available only for cpu
             qconfig = torch.quantization.get_default_qconfig('fbgemm')
             supported_engines = torch.backends.quantized.supported_engines
             assert 'fbgemm' in supported_engines, 'FBGEMM is not a supported engine. Supported engines: {}'.format(supported_engines)
