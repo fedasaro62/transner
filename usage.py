@@ -6,7 +6,7 @@ from transner import Transner
 
 def main(strings):
 
-    model = Transner(pretrained_path='transner/multilang_uncased', use_cuda=False)
+    model = Transner(pretrained_model='bert_uncased_base_easyrights_v0.1', use_cuda=False)
     ner_dict = model.ner(strings, apply_regex=True, apply_gazetteers=True)
 
     print(ner_dict)

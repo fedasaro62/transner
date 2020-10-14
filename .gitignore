@@ -10,3 +10,7 @@ rest_interface.py
 api_doc
 rest_examples.txt
 wandb
+Pipfile
+
+#pretrained_models
+models
