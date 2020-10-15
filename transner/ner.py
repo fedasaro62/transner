@@ -13,11 +13,11 @@ from simpletransformers.ner.ner_model import NERModel
 
 from .utils import NERSeparatePunctuations
 
-transner_folder = '/'.join(__file__.split('/')[:-1])
-pretrained_models_path = os.path.join(transner_folder, 'models')
-os.makedirs(pretrained_models_path, exist_ok=True)
-WORLD_CITIES_DB = os.path.join(transner_folder, 'worldcities/worldcities.csv')
-RELIGIONS_FILE = os.path.join(transner_folder, 'religions.txt')
+transner_folder     = '/'.join(__file__.split('/')[:-1])
+default_models_path = os.path.join(transner_folder, 'models')
+os.makedirs(default_models_path, exist_ok=True)
+WORLD_CITIES_DB     = os.path.join(transner_folder, 'worldcities/worldcities.csv')
+RELIGIONS_FILE      = os.path.join(transner_folder, 'religions.txt')
 
 
 _TARGET_TO_LABEL = {'O': 0,
@@ -61,31 +61,18 @@ _RULE_BASED_SCORE = 0.90
 class Transner():
 
     def __init__(self, pretrained_model, use_cuda, quantization=False, cuda_device=-1):
-        """[summary]
+        """Transner object constructor
 
         Args:
-            pretrained_model (str): Pretrained model name or path
+            pretrained_model (str): Pretrained model name or path. If the model is not present locally it will be downloaded (if available)
             use_cuda (bool): flag to use gpu model
             quantization (bool, optional): Flag to use quantized model. Defaults to False.
             cuda_device (int, optional): Id of the gpu device to use. Defaults to -1.
         """
         assert pretrained_model is not None, 'Pretrained model required'
 
-        url = 'http://venus.linksfoundation.com/transner_models/{}.tar.gz'.format(pretrained_model)
-        #check if model is present in the cache
-        if not os.path.exists(os.path.join(pretrained_models_path, pretrained_model)):
-            try:
-                pretrained_model = wget.download(url)
-            except:
-                raise(Exception('Model {} not found both locally and on the cloud'.format(pretrained_model)))
-            #remove tar.gz at the end
-            pretrained_model = '.'.join(pretrained_model.split('.')[:-2])
-            tar = tarfile.open('{}.tar.gz'.format(pretrained_model))
-            tar.extractall(path=pretrained_models_path)
-            tar.close()
-            os.remove('{}.tar.gz'.format(pretrained_model))
-        
-        pretrained_path = os.path.join(pretrained_models_path, pretrained_model)
+        pretrained_path = self.get_model_path(pretrained_model)
+
         self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True}, cuda_device=cuda_device)
         if cuda_device == -1 and quantization:
             #quantization currently available only for cpu
@@ -105,6 +92,31 @@ class Transner():
         for line in lines:
             if line.strip() != '':
                 self.religions_set.add(line.strip().lower())
+
+
+    def get_model_path(self, pretrained_model):
+        """Get the path of the model: local path, from cache or search it on the cloud (if available)
+        """
+        #check if the model is a local path
+        if os.path.exists(pretrained_model):
+            return pretrained_model
+        #otherwise check if model is present in the cache
+        elif os.path.exists(os.path.join(default_models_path, pretrained_model)):
+            return os.path.join(default_models_path, pretrained_model)
+        #otherwise search it on the cloud
+        else:
+            url = 'http://venus.linksfoundation.com/transner_models/{}.tar.gz'.format(pretrained_model)
+            try:
+                pretrained_model = wget.download(url)
+            except:
+                raise(Exception('Model {} not found both locally and on the cloud'.format(pretrained_model)))
+            #remove tar.gz at the end
+            pretrained_model = '.'.join(pretrained_model.split('.')[:-2])
+            tar = tarfile.open('{}.tar.gz'.format(pretrained_model))
+            tar.extractall(path=default_models_path)
+            tar.close()
+            os.remove('{}.tar.gz'.format(pretrained_model))
+            return os.path.join(default_models_path, pretrained_model)
 
 
     def reset_preprocesser(self):

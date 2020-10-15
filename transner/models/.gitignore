@@ -1,0 +1,5 @@
+#this file is used to keep the empty folder on the repo but ignoring all the subfolders
+
+*
+*/
+!.gitignore
