@@ -95,7 +95,7 @@ class Transner():
 
 
     def get_model_path(self, pretrained_model):
-        """Get the path of the model: local path, from cache or search it on the cloud (if available)
+        """Get the path of the model: local path, from cache or search it in the cloud (if available)
         """
         #check if the model is a local path
         if os.path.exists(pretrained_model):
@@ -247,27 +247,23 @@ class Transner():
                 }
             """
             result_dict = []
-            curr_res = {}
+            curr_res    = {}
             for s, prediction, scores in zip(strings, predictions, conf_scores):
-                
                 assert len(prediction) == len(scores), 'Prediction and scores size mismatch'
-                curr_res = dict()
-
-                curr_res['sentence'] = s
-                curr_res['entities'] = []
-                curr_offset = 0
+                curr_res                = dict()
+                curr_res['sentence']    = s
+                curr_res['entities']    = []
+                curr_offset             = 0
                 #for multi-words entities
-                beginning_offset = None
-                active_e_type = None
-                active_e_value = ''
-                active_e_scores = []
+                beginning_offset        = None
+                active_e_type           = None
+                active_e_value          = ''
+                active_e_scores         = []
 
                 for e_pred, score in zip(prediction, scores):
-                    kv_pair = list(e_pred.items())
-                    assert len(kv_pair) == 1
-
+                    kv_pair         = list(e_pred.items())
                     e_value, e_type = kv_pair[0]
-                    
+                    curr_offset = curr_offset + s[curr_offset:].find(e_value) #flexible with more than one leading white spaces
                     if e_type[0] == 'B':
                         #if a entity is still active, close it
                         if active_e_type:
@@ -279,18 +275,18 @@ class Transner():
                             if curr_entity['value'][-2:] == ' è':
                                 curr_entity['value'] = curr_entity['value'][:-2] 
                             curr_res['entities'].append(curr_entity)
-                            active_e_value = ''
+                            active_e_value  = ''
                             active_e_scores = []
                         beginning_offset = curr_offset
-                        active_e_type= e_type[2:]
-                        active_e_value += e_value + ' '
+                        active_e_type    = e_type[2:]
+                        active_e_value   += e_value + ' ' #! assumption: always only one whitespace inside multi-word entities
                         active_e_scores.append(score)
                     elif e_type[0] == 'I':
                         #treat it as a beginner if the beginner is not present
                         if not active_e_type:
-                            beginning_offset = curr_offset
-                            active_e_type = e_type[2:]
-                            active_e_value += e_value + ' '
+                            beginning_offset    = curr_offset
+                            active_e_type       = e_type[2:]
+                            active_e_value      += e_value + ' '
                             active_e_scores.append(score)
                         elif e_type[2:] == active_e_type:
                             active_e_value += e_value + ' '
@@ -301,10 +297,10 @@ class Transner():
                                         'confidence': round(np.mean(active_e_scores), 2),
                                         'offset': beginning_offset}
                             curr_res['entities'].append(curr_entity)
-                            beginning_offset = curr_offset
-                            active_e_type = e_type[2:]
-                            active_e_value = e_value + ' ' #here previous version was +=
-                            active_e_scores = [score]
+                            beginning_offset    = curr_offset
+                            active_e_type       = e_type[2:]
+                            active_e_value      = e_value + ' ' #here previous version was +=
+                            active_e_scores     = [score]
                     elif e_type[0] == 'O' and active_e_type:
                         curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
                                     'value': active_e_value[:-1], 
@@ -314,13 +310,10 @@ class Transner():
                         if curr_entity['value'][-2:] == ' è':
                             curr_entity['value'] = curr_entity['value'][:-2] 
                         curr_res['entities'].append(curr_entity)
-                        beginning_offset = None
-                        active_e_type = None
-                        active_e_value = ''
-                        active_e_scores = [score]
-
-                    #offset takes into account also the space
-                    curr_offset += len(e_value) + 1
+                        beginning_offset    = None
+                        active_e_type       = None
+                        active_e_value      = ''
+                        active_e_scores     = [score]
 
                     #if last prediction for that string, then save the active entities
                     if curr_offset >= len(s) and active_e_type:

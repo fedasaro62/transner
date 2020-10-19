@@ -40,7 +40,7 @@ class NERSeparatePunctuations():
 
     def reset(self):
         self.puncts = string.punctuation
-        self.changes = []
+        self.proc2origin = [] #maps offset_processed -> offset_original
         self.original = []
 
 
@@ -57,25 +57,35 @@ class NERSeparatePunctuations():
         proc_strings = []
         for s in strings:
             proc_string = ''
-            curr_changes = []
-            add_ws = False
-            for offset, ch in enumerate(s):
-                if add_ws:
-                    if ch != ' ':
+            offset_mapping = []
+            for original_offset, ch in enumerate(s):
+                if ch == ' ' and s[original_offset-1] in self.puncts:
+                    #if this is a space after a punctation just do nothing
+                    # because the space was already added to the processed string
+                    pass
+                elif ch in self.puncts:
+                    #surrounding punctuation with white spaces
+                    # if the first white space is already present then do nothing otherwise insert it manually
+                    if original_offset > 0 and s[original_offset-1] != ' ' and proc_string[-1] != ' ':
                         proc_string += ' '
-                        curr_changes.append(len(proc_string)-1)
-                    add_ws = False
-                if ch in self.puncts:
-                    if offset > 0 and proc_string[-1] != ' ':
+                        offset_mapping.append(-1)
+                    proc_string += ch
+                    offset_mapping.append(original_offset) #punctuation mapping
+                    if len(s) > original_offset+1:
+                        #if the punctuation is not the final character
                         proc_string += ' '
-                        curr_changes.append(len(proc_string)-1)
-                    add_ws = True
-                proc_string += ch
+                        #if the original string already has a space after the punctuation, just map the space to the original one
+                        # else map to -1: character not present in the original string
+                        offset_mapping.append(original_offset+1 if s[original_offset+1] == ' ' else -1)
+                else:
+                    proc_string += ch
+                    offset_mapping.append(original_offset)
+
             if do_lower_case:
                 proc_string = proc_string.lower()
+            assert len(proc_string) == len(offset_mapping), 'processed string and offset mapping lengths do not match'
             proc_strings.append(proc_string)
-            self.changes.append(curr_changes)
-
+            self.proc2origin.append(offset_mapping)
         return proc_strings
 
 
@@ -83,22 +93,19 @@ class NERSeparatePunctuations():
         """Readjust the entities offset due to preprocessing of the original strings
 
         Arguments:
-            entities {list} -- List of entities, ordered by the original strings indexes, for each string having the format [{["offset": ]}]
+            entities {list} -- List of entities, ordered by the original strings indexes for each string having the format [{["offset": ]}]
             adjust_case {boolean} -- if True, the value of each entity is copied from the span in the original string (to avoid case mismatch)
         """
-        assert len(entities) == len(self.original)
-        for s, e_list, c_list in zip(self.original, entities, self.changes):
+        assert len(entities) == len(self.original), 'list of entities length do not match the number of original strings'
+        for e_list, offset_mapping in zip(entities, self.proc2origin):
+            #adjust offsets
             for e in e_list:
-                curr_count = 0
-                for c in c_list:
-                    if e['offset'] >= c:
-                        curr_count += 1
-                    else:
-                        break
-                e['offset'] -= curr_count
+                e['offset'] = offset_mapping[e['offset']]
+                
+
 
         if adjust_case:
-            # copy the entities values from the original string
+            # copy the entities values from the original string to resume the case information
             for s, e_list in zip(self.original, entities):
                 for e in e_list:
                     start_pos = e['offset']
