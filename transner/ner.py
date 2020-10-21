@@ -13,6 +13,8 @@ from simpletransformers.ner.ner_model import NERModel
 
 from .utils import NERSeparatePunctuations
 
+from dateparser.search import search_dates
+
 transner_folder     = '/'.join(__file__.split('/')[:-1])
 default_models_path = os.path.join(transner_folder, 'models')
 os.makedirs(default_models_path, exist_ok=True)
@@ -229,6 +231,20 @@ class Transner():
 
         return ner_dict
 
+    def find_dates(self, ner_dict):
+
+        for item in ner_dict:
+            dates = search_dates(item['sentence'])
+
+            for date in dates:
+                for occurrence in re.finditer(date[0], item['sentence']):
+                    item['entities'].append(
+                        {'type': 'TIME',
+                        'value': date[0],
+                        'confidence': _RULE_BASED_SCORE,
+                        'offset': occurrence.start()})
+
+        return ner_dict
 
     def make_ner_dict(self, strings, predictions, conf_scores):
             """[summary]
