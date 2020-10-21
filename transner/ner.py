@@ -236,13 +236,14 @@ class Transner():
         for item in ner_dict:
             dates = search_dates(item['sentence'])
 
-            for date in dates:
-                for occurrence in re.finditer(date[0], item['sentence']):
-                    item['entities'].append(
-                        {'type': 'TIME',
-                        'value': date[0],
-                        'confidence': _RULE_BASED_SCORE,
-                        'offset': occurrence.start()})
+            if dates:
+                for date in dates:
+                    for occurrence in re.finditer(date[0], item['sentence']):
+                        item['entities'].append(
+                            {'type': 'TIME',
+                            'value': date[0],
+                            'confidence': _RULE_BASED_SCORE,
+                            'offset': occurrence.start()})
 
         return ner_dict
 
