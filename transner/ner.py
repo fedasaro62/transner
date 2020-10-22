@@ -14,6 +14,7 @@ from simpletransformers.ner.ner_model import NERModel
 from .utils import NERSeparatePunctuations
 
 from dateparser.search import search_dates
+import fasttext
 
 transner_folder     = '/'.join(__file__.split('/')[:-1])
 default_models_path = os.path.join(transner_folder, 'models')
@@ -74,6 +75,8 @@ class Transner():
         assert pretrained_model is not None, 'Pretrained model required'
 
         pretrained_path = self.get_model_path(pretrained_model)
+        self.get_model_detection_languages()
+        self.language_detection_model = fasttext.load_model('lid.176.bin')
 
         self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True}, cuda_device=cuda_device)
         if cuda_device == -1 and quantization:
@@ -120,6 +123,17 @@ class Transner():
             os.remove('{}.tar.gz'.format(pretrained_model))
             return os.path.join(default_models_path, pretrained_model)
 
+    def get_model_detection_languages(self):
+        # https://fasttext.cc/docs/en/language-identification.html
+        if not os.path.exists('lid.176.bin'):
+            url = 'https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin'
+            try:
+                lang_model = wget.download(url)
+            except:
+                raise(Exception('Error while downloading the language detection model!'))
+
+            
+        return os.path.join(default_models_path, 'lid.176.bin')
 
     def reset_preprocesser(self):
         self.preprocesser.reset()
@@ -234,18 +248,37 @@ class Transner():
     def find_dates(self, ner_dict):
 
         for item in ner_dict:
-            dates = search_dates(item['sentence'])
+            langs_detected = self.language_detection_model.predict(item['sentence'], k=1)
+            lang = re.sub('__label__', '', langs_detected[0][0])
+            dates = search_dates(item['sentence'], languages=[lang])
 
             if dates:
                 for date in dates:
-                    for occurrence in re.finditer(date[0], item['sentence']):
-                        item['entities'].append(
+                    for occurrence in re.finditer(date[0], item['sentence']):                  
+                        if not self.find_overlap(item['entities'], occurrence):
+                            item['entities'].append(
                             {'type': 'TIME',
                             'value': date[0],
                             'confidence': _RULE_BASED_SCORE,
                             'offset': occurrence.start()})
 
         return ner_dict
+
+    def find_overlap(self, entities, candidate):
+        for entity in entities:
+            candidate_start, candidate_end = candidate.start(), candidate.end()
+            entity_start, entity_end = entity['offset'], entity['offset'] + len(entity['value'])
+
+            if candidate_start >= entity_start and candidate_end <= entity_end:
+                return True
+
+            if candidate_start < entity_start and candidate_end < entity_end and candidate_end > entity_start:
+                return True
+            
+            if candidate_start > entity_start and candidate_end > entity_end and candidate_start < entity_end:
+                return True
+
+        return False
 
     def make_ner_dict(self, strings, predictions, conf_scores):
             """[summary]
