@@ -248,8 +248,8 @@ class Transner():
 
         for item in ner_dict:
             langs_detected = self.language_detection_model.predict(item['sentence'], k=1)
-            lang = re.sub('__label__', '', langs_detected[0][0])
-            dates = search_dates(item['sentence'], languages=[lang])
+            self.language = re.sub('__label__', '', langs_detected[0][0])
+            dates = search_dates(item['sentence'], languages=[self.language])
 
             if dates:
                 for date in dates:
