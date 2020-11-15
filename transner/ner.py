@@ -9,11 +9,10 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 import wget
+from dateparser.search import search_dates
 from simpletransformers.ner.ner_model import NERModel
 
 from .utils import NERSeparatePunctuations
-
-from dateparser.search import search_dates
 
 transner_folder     = '/'.join(__file__.split('/')[:-1])
 default_models_path = os.path.join(transner_folder, 'models')
@@ -62,7 +61,14 @@ _RULE_BASED_SCORE = 0.90
 
 class Transner():
 
-    def __init__(self, pretrained_model, use_cuda, quantization=False, cuda_device=-1, language_detection=False, threshold=0):
+    def __init__(self, 
+                pretrained_model, 
+                use_cuda, 
+                n_gpus=1, 
+                quantization=False, 
+                cuda_device=-1, 
+                language_detection=False, 
+                threshold=0):
         """Transner object constructor
 
         Args:
@@ -81,8 +87,16 @@ class Transner():
             import fasttext
             self.get_model_detection_languages()
             self.language_detection_model = fasttext.load_model('lid.176.bin')
-
-        self.model = NERModel('bert', pretrained_path, use_cuda=use_cuda, args={'no_cache': True, 'use_cached_eval_features': False, 'process_count': 1, 'silent': True}, cuda_device=cuda_device)
+        args = {'no_cache': True, 
+                'use_cached_eval_features': False, 
+                'process_count': 1, 
+                'silent': True, 
+                'n_gpu': n_gpus}
+        self.model = NERModel('bert', 
+                            pretrained_path,
+                            use_cuda=use_cuda,
+                            args=args,
+                            cuda_device=cuda_device)
         self.threshold = threshold
         if cuda_device == -1 and quantization:
             #quantization currently available only for cpu
