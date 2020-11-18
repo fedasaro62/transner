@@ -64,7 +64,7 @@ class Transner():
     def __init__(self, 
                 pretrained_model, 
                 use_cuda, 
-                n_gpus=1, 
+                multi_gpu=False, 
                 quantization=False, 
                 cuda_device=-1, 
                 language_detection=False, 
@@ -76,6 +76,7 @@ class Transner():
             use_cuda (bool): flag to use gpu model
             quantization (bool, optional): Flag to use quantized model. Defaults to False.
             cuda_device (int, optional): Id of the gpu device to use. Defaults to -1.
+            multi_gpu (bool, optional): Flag to use available all gpus (please set CUDA_DEVICE_ORDER and CUDA_VISIBLE_DEVICES env variable). Defaults to False.
 
             threshold (float, optional): threshold for filter the confidence
         """
@@ -91,7 +92,7 @@ class Transner():
                 'use_cached_eval_features': False, 
                 'process_count': 1, 
                 'silent': True, 
-                'n_gpu': n_gpus}
+                'n_gpu': 1 if not multi_gpu else 2} #n_gpu > 1 means multi-gpu (the number of gpus depend on the environment)
         self.model = NERModel('bert', 
                             pretrained_path,
                             use_cuda=use_cuda,
@@ -177,7 +178,7 @@ class Transner():
         (predictions, logits) = self.model.predict(processed_input)
         conf_scores = [
                         [
-                            F.softmax(torch.tensor(logs), dim=-1).max().item()
+                            F.softmax(torch.tensor(logs).float(), dim=-1).max().item()
                             for curr_item in curr_logits
                             for e_val, logs in curr_item.items()
                         ]
