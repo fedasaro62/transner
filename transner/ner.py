@@ -268,16 +268,30 @@ class Transner():
             langs_detected = self.language_detection_model.predict(item['sentence'], k=1)
             self.language = re.sub('__label__', '', langs_detected[0][0])
             dates = search_dates(item['sentence'], languages=[self.language])
-
             if dates:
-                for date in dates:
-                    for occurrence in re.finditer(date[0], item['sentence']):                  
+                starting_index = 0
+                for date in dates:             
+                    occurrence = re.search(date[0], item['sentence'][starting_index:])
+                    try:
+                        if not (item['sentence'][occurrence.start() - 1] == ' ' and item['sentence'][occurrence.end() + 1] == ' '):
+                            if not self.find_overlap(item['entities'], occurrence):
+                                item['entities'].append(
+                                {'type': 'TIME',
+                                'value': date[0],
+                                'confidence': _RULE_BASED_SCORE,
+                                'offset': starting_index + occurrence.start()})
+                            
+                        starting_index = starting_index + occurrence.end()
+                    except IndexError:
+                        # the element is at the beginning or ending of the sentence
                         if not self.find_overlap(item['entities'], occurrence):
-                            item['entities'].append(
-                            {'type': 'TIME',
-                            'value': date[0],
-                            'confidence': _RULE_BASED_SCORE,
-                            'offset': occurrence.start()})
+                                item['entities'].append(
+                                {'type': 'TIME',
+                                'value': date[0],
+                                'confidence': _RULE_BASED_SCORE,
+                                'offset': starting_index + occurrence.start()})
+                            
+                        starting_index = starting_index + occurrence.end()
 
         return ner_dict
 
