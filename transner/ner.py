@@ -144,6 +144,7 @@ class Transner():
             os.remove('{}.tar.gz'.format(pretrained_model))
             return os.path.join(default_models_path, pretrained_model)
 
+
     def get_model_detection_languages(self):
         # https://fasttext.cc/docs/en/language-identification.html
         if not os.path.exists('lid.176.bin'):
@@ -152,6 +153,7 @@ class Transner():
                 lang_model = wget.download(url)
             except:
                 raise(Exception('Error while downloading the language detection model!'))
+
 
     def reset_preprocesser(self):
         self.preprocesser.reset()
@@ -190,9 +192,12 @@ class Transner():
         assert len(predictions) == len(conf_scores), 'Batch sizes do not match'
 
         ner_dict = self.make_ner_dict(processed_input, predictions, conf_scores)
-
         # post processing: get original strings (no preprocessed) and adjust the entities offset
         self.preprocesser.adjustEntitiesOffset([r['entities'] for r in ner_dict], adjust_case=True)
+
+        # merge multi-word entities separated by apostroph (this problem occurs sometimes)
+        #ner_dict = self.merge_apostrophe_entities(ner_dict)
+
         for r, original in zip(ner_dict, input_strings):
             r['sentence'] = original
         if apply_regex:
@@ -202,6 +207,31 @@ class Transner():
 
         return ner_dict
 
+    """
+    def merge_apostrophe_entities(self, ner_dict):
+        If an apostrophe split a multi-word entity in two parts (apostrophe classified as O), then merge them
+
+        Args:
+            ner_dict ([type]): [description]
+        
+        to_remove = []
+        removed = False
+        for item_idx, item in enumerate(ner_dict):
+            for idx in range(len(item['entities'])):
+                if removed:
+                    removed = False
+                    continue
+                #TODO at this point the apostrophe is not present, so it is better to reason with distance
+                if item['entities'][idx]['value'][-1] not in ['a', 'e', 'i', 'o', 'u']:
+                    if idx < len(item['entities'])-1 \
+                        and item['entities'][idx+1]['type'] == item['entities'][idx]['type']:
+                        item['entities'][idx]['value'] += item['entities'][idx+1]['value']
+                        removed = True
+                        to_remove.append(tuple(item_idx, idx))
+        for rem_tuple in to_remove:
+            ner_dict[rem_tuple[0]]['entities'].remove(rem_tuple[1])
+        return ner_dict
+    """
 
     def find_from_regex(self, ner_dict):
         """Find matches of regex patterns from ner_dict and insert the new entities found by means of the regex.
@@ -263,6 +293,7 @@ class Transner():
 
         return ner_dict
 
+
     def find_dates(self, ner_dict):
 
         for item in ner_dict:
@@ -296,6 +327,7 @@ class Transner():
 
         return ner_dict
 
+
     def find_overlap(self, entities, candidate):
         for entity in entities:
             candidate_start, candidate_end = candidate.start(), candidate.end()
@@ -311,6 +343,7 @@ class Transner():
                 return True
 
         return False
+
 
     def make_ner_dict(self, strings, predictions, conf_scores):
             """[summary]

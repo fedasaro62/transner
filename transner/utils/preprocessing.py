@@ -39,7 +39,7 @@ class NERSeparatePunctuations():
         self.reset()
 
     def reset(self):
-        self.puncts = string.punctuation
+        self.puncts = string.punctuation + "“" + "”"
         self.proc2origin = [] #maps offset_processed -> offset_original
         self.original = []
 
