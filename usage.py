@@ -8,7 +8,7 @@ def main(args):
     model = Transner(pretrained_model='bert_uncased_base_easyrights_v0.1',
                     use_cuda=args.cuda,
                     n_gpus=args.n_gpus,
-                    quantization=True)
+                    quantization=False)
     ner_dict = model.ner(args.strings, apply_regex=True, apply_gazetteers=True)
     #ner_dict = model.find_dates(ner_dict)
     print(ner_dict)

@@ -88,7 +88,8 @@ class Transner():
             self.get_model_detection_languages()
             self.language_detection_model = fasttext.load_model('lid.176.bin')
         args = {'no_cache': True, 
-                'use_cached_eval_features': False, 
+                'use_cached_eval_features': False,
+                'max_seq_length': 512, #default=128
                 'process_count': 1, 
                 'silent': True, 
                 'n_gpu': n_gpus}
