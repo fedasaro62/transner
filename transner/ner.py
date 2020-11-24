@@ -266,13 +266,17 @@ class Transner():
     def find_dates(self, ner_dict):
 
         for item in ner_dict:
-            langs_detected = self.language_detection_model.predict(item['sentence'], k=1)
-            self.language = re.sub('__label__', '', langs_detected[0][0])
-            dates = search_dates(item['sentence'], languages=[self.language])
+            sentence = re.sub(r'[^a-zA-Z0-9 ]', '', item['sentence'])
+            try:
+                langs_detected = self.language_detection_model.predict(sentence, k=1)
+                self.language = re.sub('__label__', '', langs_detected[0][0])
+                dates = search_dates(item['sentence'], languages=[self.language])
+            except ValueError as e:
+                continue
             if dates:
                 starting_index = 0
                 for date in dates:             
-                    occurrence = re.search(date[0], item['sentence'][starting_index:])
+                    occurrence = re.search(re.escape(date[0]), item['sentence'][starting_index:])
                     try:
                         if not (item['sentence'][occurrence.start() - 1] == ' ' and item['sentence'][occurrence.end() + 1] == ' '):
                             if not self.find_overlap(item['entities'], occurrence):
