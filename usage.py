@@ -7,7 +7,7 @@ from transner import Transner
 def main(args):
     model = Transner(pretrained_model='bert_uncased_base_easyrights_v0.1',
                     use_cuda=args.cuda,
-                    n_gpus=args.n_gpus,
+                    multi_gpu=args.multi_gpu,
                     quantization=False)
     ner_dict = model.ner(args.strings, apply_regex=True, apply_gazetteers=True)
     #ner_dict = model.find_dates(ner_dict)
@@ -30,11 +30,11 @@ if __name__ == '__main__':
         default=False, 
         help='Flag to use GPU (default: False)')
     parser.add_argument(
-        '--n_gpus',
-        type=int,
+        '--multi_gpu',
+        action='store_true',
         required=False,
         default=1,
-        help='Number of gpus to use if cuda flag was set (default: 1)')
+        help='Flag to use multi gpus when if cuda flag was set (default: 1)')
     args = parser.parse_args()
 
     main(args)
