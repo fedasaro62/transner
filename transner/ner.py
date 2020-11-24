@@ -64,7 +64,7 @@ class Transner():
     def __init__(self, 
                 pretrained_model, 
                 use_cuda, 
-                n_gpus=1, 
+                multi_gpu=False, 
                 quantization=False, 
                 cuda_device=-1, 
                 language_detection=False, 
@@ -76,6 +76,7 @@ class Transner():
             use_cuda (bool): flag to use gpu model
             quantization (bool, optional): Flag to use quantized model. Defaults to False.
             cuda_device (int, optional): Id of the gpu device to use. Defaults to -1.
+            multi_gpu (bool, optional): Flag to use available all gpus (please set CUDA_DEVICE_ORDER and CUDA_VISIBLE_DEVICES env variable). Defaults to False.
 
             threshold (float, optional): threshold for filter the confidence
         """
@@ -92,7 +93,7 @@ class Transner():
                 'max_seq_length': 512, #default=128
                 'process_count': 1, 
                 'silent': True, 
-                'n_gpu': n_gpus}
+                'n_gpu': 1 if not multi_gpu else 2} #n_gpu > 1 means multi-gpu (the number of gpus depend on the environment)
         self.model = NERModel('bert', 
                             pretrained_path,
                             use_cuda=use_cuda,
@@ -178,7 +179,7 @@ class Transner():
         (predictions, logits) = self.model.predict(processed_input)
         conf_scores = [
                         [
-                            F.softmax(torch.tensor(logs), dim=-1).max().item()
+                            F.softmax(torch.tensor(logs).float(), dim=-1).max().item()
                             for curr_item in curr_logits
                             for e_val, logs in curr_item.items()
                         ]
@@ -268,16 +269,30 @@ class Transner():
             langs_detected = self.language_detection_model.predict(item['sentence'], k=1)
             self.language = re.sub('__label__', '', langs_detected[0][0])
             dates = search_dates(item['sentence'], languages=[self.language])
-
             if dates:
-                for date in dates:
-                    for occurrence in re.finditer(date[0], item['sentence']):                  
+                starting_index = 0
+                for date in dates:             
+                    occurrence = re.search(date[0], item['sentence'][starting_index:])
+                    try:
+                        if not (item['sentence'][occurrence.start() - 1] == ' ' and item['sentence'][occurrence.end() + 1] == ' '):
+                            if not self.find_overlap(item['entities'], occurrence):
+                                item['entities'].append(
+                                {'type': 'TIME',
+                                'value': date[0],
+                                'confidence': _RULE_BASED_SCORE,
+                                'offset': starting_index + occurrence.start()})
+                            
+                        starting_index = starting_index + occurrence.end()
+                    except IndexError:
+                        # the element is at the beginning or ending of the sentence
                         if not self.find_overlap(item['entities'], occurrence):
-                            item['entities'].append(
-                            {'type': 'TIME',
-                            'value': date[0],
-                            'confidence': _RULE_BASED_SCORE,
-                            'offset': occurrence.start()})
+                                item['entities'].append(
+                                {'type': 'TIME',
+                                'value': date[0],
+                                'confidence': _RULE_BASED_SCORE,
+                                'offset': starting_index + occurrence.start()})
+                            
+                        starting_index = starting_index + occurrence.end()
 
         return ner_dict
 
