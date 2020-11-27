@@ -184,7 +184,6 @@ class Transner():
                         ]
                         for curr_logits in logits
                     ]
-
         assert len(predictions) == len(input_strings), 'Batch sizes do not match'
         assert len(predictions) == len(conf_scores), 'Batch sizes do not match'
 
@@ -337,7 +336,7 @@ class Transner():
                             if active_e_type:
                                 curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
                                             'value': active_e_value[:-1],
-                                            'confidence': round(np.mean(active_e_scores), 2),
+                                            'confidence': float(str(np.mean(active_e_scores))[:6]),
                                             'offset': beginning_offset}
                                 # often the string "mario è" is tagged with a person. The following operation manually fixes this problem
                                 if curr_entity['value'][-2:] == ' è':
@@ -362,7 +361,7 @@ class Transner():
                             else:
                                 curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
                                             'value': active_e_value[:-1],
-                                            'confidence': round(np.mean(active_e_scores), 2),
+                                            'confidence': float(str(np.mean(active_e_scores))[:6]),
                                             'offset': beginning_offset}
                                 curr_res['entities'].append(curr_entity)
                                 beginning_offset    = curr_offset
@@ -372,7 +371,7 @@ class Transner():
                         elif e_type[0] == 'O' and active_e_type:
                             curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
                                         'value': active_e_value[:-1], 
-                                        'confidence': round(np.mean(active_e_scores), 2),
+                                        'confidence': float(str(np.mean(active_e_scores))[:6]),#4 decimal digits
                                         'offset': beginning_offset}
                             # often the string "mario è" is tagged with a person. This operation clean this problem
                             if curr_entity['value'][-2:] == ' è':
@@ -387,7 +386,7 @@ class Transner():
                         if curr_offset >= len(s) and active_e_type:
                             curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
                                         'value': active_e_value[:-1], 
-                                        'confidence': round(np.mean(active_e_scores), 2),
+                                        'confidence': float(str(np.mean(active_e_scores))[:6]),#4 decimal digits
                                         'offset': beginning_offset}
                             curr_res['entities'].append(curr_entity)
                 result_dict.append(curr_res)

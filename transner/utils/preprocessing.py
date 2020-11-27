@@ -101,8 +101,6 @@ class NERSeparatePunctuations():
             #adjust offsets
             for e in e_list:
                 e['offset'] = offset_mapping[e['offset']]
-                
-
 
         if adjust_case:
             # copy the entities values from the original string to resume the case information
