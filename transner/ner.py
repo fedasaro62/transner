@@ -335,6 +335,9 @@ class Transner():
         for entity in entities:
             candidate_start, candidate_end = candidate.start(), candidate.end()
             entity_start, entity_end = entity['offset'], entity['offset'] + len(entity['value'])
+            
+            if candidate_start == entity_start or candidate_end == entity_end:
+                return True
 
             if candidate_start >= entity_start and candidate_end <= entity_end:
                 return True
