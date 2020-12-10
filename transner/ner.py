@@ -325,7 +325,8 @@ class Transner():
                         starting_index = starting_index + occurrence.end()
                     except IndexError:
                         # the element is at the beginning or ending of the sentence
-                        if not self.find_overlap(item['entities'], occurrence):
+                        if occurrence.start() == 0 or occurrence.end() == len(item['sentence']):
+                            if not self.find_overlap(item['entities'], occurrence.start(), occurrence.end()):
                                 item['entities'].append(
                                 {'type': 'TIME',
                                 'value': date[0],
