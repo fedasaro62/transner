@@ -29,14 +29,20 @@ _TARGET_TO_LABEL = {'O': 0,
                     'B-ORG': 5,
                     'I-ORG': 6,
                     'B-MISC': 7,
-                    'I-MISC': 8
+                    'I-MISC': 8,
+                    'B-DOC': 9,
+                    'I-DOC': 10,
+                    'B-PROC': 11,
+                    'I-PROC': 12
                     }
-_LABEL_TO_TARGET = ['O', 'B-PER', 'I-PER', 'B-LOC', 'I-LOC', 'B-ORG', 'I-ORG', 'B-MISC', 'I-MISC']
+_LABEL_TO_TARGET = ['O', 'B-PER', 'I-PER', 'B-LOC', 'I-LOC', 'B-ORG', 'I-ORG', 'B-MISC', 'I-MISC', 'B-DOC', 'I-DOC', 'B-PROC', 'I-PROC']
 
 _SHORT_TO_TYPE = {'PER': 'PERSON',
                 'LOC': 'LOCATION',
                 'ORG': 'ORGANIZATION',
-                'MISC': 'MISCELLANEOUS'
+                'MISC': 'MISCELLANEOUS',
+                'DOC': 'DOCUMENT',
+                'PROC': 'PROCEDURE'
                 }
 
 ########################################################################################################################################################
@@ -309,7 +315,7 @@ class Transner():
                     occurrence = re.search(re.escape(date[0]), item['sentence'][starting_index:])
                     try:
                         if not (item['sentence'][occurrence.start() - 1] == ' ' and item['sentence'][occurrence.end() + 1] == ' '):
-                            if not self.find_overlap(item['entities'], occurrence):
+                            if not self.find_overlap(item['entities'], occurrence.start(), occurrence.end()):
                                 item['entities'].append(
                                 {'type': 'TIME',
                                 'value': date[0],
@@ -319,7 +325,8 @@ class Transner():
                         starting_index = starting_index + occurrence.end()
                     except IndexError:
                         # the element is at the beginning or ending of the sentence
-                        if not self.find_overlap(item['entities'], occurrence):
+                        if occurrence.start() == 0 or occurrence.end() == len(item['sentence']):
+                            if not self.find_overlap(item['entities'], occurrence.start(), occurrence.end()):
                                 item['entities'].append(
                                 {'type': 'TIME',
                                 'value': date[0],
@@ -331,10 +338,12 @@ class Transner():
         return ner_dict
 
 
-    def find_overlap(self, entities, candidate):
+    def find_overlap(self, entities, candidate_start, candidate_end):
         for entity in entities:
-            candidate_start, candidate_end = candidate.start(), candidate.end()
             entity_start, entity_end = entity['offset'], entity['offset'] + len(entity['value'])
+            
+            '''if candidate_start == entity_start or candidate_end == entity_end:
+                return True
 
             if candidate_start >= entity_start and candidate_end <= entity_end:
                 return True
@@ -343,6 +352,28 @@ class Transner():
                 return True
             
             if candidate_start > entity_start and candidate_end > entity_end and candidate_start < entity_end:
+                return True'''
+       
+            #1
+            if candidate_start < entity_start and candidate_end < entity_end and candidate_end > entity_start:
+                return True
+            #2
+            if candidate_start > entity_start and candidate_end < entity_end:
+                return True
+            #3
+            if candidate_start > entity_start and candidate_end > entity_end and candidate_start < entity_end:
+                return True
+            #4
+            if candidate_start == entity_start and candidate_end == entity_end:
+                return True
+            #5 - 5bis
+            if candidate_start == entity_start or candidate_end == entity_start:
+                return True
+            #6 - 6bis
+            if candidate_end == entity_end or candidate_start == entity_end:
+                return True
+            # 7
+            if candidate_start < entity_start and candidate_end > entity_end:
                 return True
 
         return False
