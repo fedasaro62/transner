@@ -104,10 +104,15 @@ class NERSeparatePunctuations():
 
         if adjust_case:
             # copy the entities values from the original string to resume the case information
-            for s, e_list in zip(self.original, entities):
+            for s, e_list, offset_mapping in zip(self.original, entities, self.proc2origin):
                 for e in e_list:
                     start_pos = e['offset']
-                    end_pos = start_pos + len(e['value'])
+                    non_existing_tokens = 0
+                    #compute number of non-existing tokens in the original string
+                    for i in range(start_pos, start_pos+len(e['value'])):
+                        non_existing_tokens += int(offset_mapping[i] == -1)
+
+                    end_pos = start_pos + len(e['value']) - non_existing_tokens
                     e['value'] = s[start_pos:end_pos]
                     # clean possible white spaces (unlikely to happen)
                     if e['value'][-1] == ' ':

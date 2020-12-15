@@ -47,7 +47,7 @@ Zhuang Shigongism
 Japanese
 Aum Shinrikyo
 Shinto
-Korean
+
 Cheondoism
 Daejongism
 Daesun Jinrihoe
@@ -59,7 +59,7 @@ Suwunism
 Won Buddhism
 Manchu
 Manchu shamanism
-Vietnamese
+
 Đạo Mẫu
 Caodaism
 Đạo Bửu Sơn Kỳ Hương
@@ -627,7 +627,7 @@ Tengrism
 Mongolian shamanism
 Burkhanism
 Vattisen Yaly
-American
+
 
 Abenaki mythology
 Anishinaabe traditional beliefs
@@ -674,7 +674,7 @@ Vietnamese folk religion
 Caodaism
 Đạo Mẫu
 Hoahaoism
-Austronesian
+
 Batak Parmalim
 Dayak religion
 Kaharingan
@@ -706,11 +706,10 @@ Mari Native Religion
 Mordvin Native Religion
 Sámi shamanism
 Udmurt Vos
-Japanese
 
 Ryukyuan religion
 Shinto
-Korean
+
 Cheondoism
 Jeungsanism
 Korean shamanism

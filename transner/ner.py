@@ -200,9 +200,6 @@ class Transner():
         # post processing: get original strings (no preprocessed) and adjust the entities offset
         self.preprocesser.adjustEntitiesOffset([r['entities'] for r in ner_dict], adjust_case=True)
 
-        # merge multi-word entities separated by apostroph (this problem occurs sometimes)
-        #ner_dict = self.merge_apostrophe_entities(ner_dict)
-
         for r, original in zip(ner_dict, input_strings):
             r['sentence'] = original
         if apply_regex:
@@ -212,31 +209,6 @@ class Transner():
 
         return ner_dict
 
-    """
-    def merge_apostrophe_entities(self, ner_dict):
-        If an apostrophe split a multi-word entity in two parts (apostrophe classified as O), then merge them
-
-        Args:
-            ner_dict ([type]): [description]
-        
-        to_remove = []
-        removed = False
-        for item_idx, item in enumerate(ner_dict):
-            for idx in range(len(item['entities'])):
-                if removed:
-                    removed = False
-                    continue
-                #TODO at this point the apostrophe is not present, so it is better to reason with distance
-                if item['entities'][idx]['value'][-1] not in ['a', 'e', 'i', 'o', 'u']:
-                    if idx < len(item['entities'])-1 \
-                        and item['entities'][idx+1]['type'] == item['entities'][idx]['type']:
-                        item['entities'][idx]['value'] += item['entities'][idx+1]['value']
-                        removed = True
-                        to_remove.append(tuple(item_idx, idx))
-        for rem_tuple in to_remove:
-            ner_dict[rem_tuple[0]]['entities'].remove(rem_tuple[1])
-        return ner_dict
-    """
 
     def find_from_regex(self, ner_dict):
         """Find matches of regex patterns from ner_dict and insert the new entities found by means of the regex.
@@ -260,7 +232,7 @@ class Transner():
                             matched_string = matched_string[:-1]
                         
                         item['entities'].append({'type': field,
-                                                'confidence': round(_RULE_BASED_SCORE, 2),
+                                                'confidence': float(str(_RULE_BASED_SCORE)[:-6]),
                                                 'value': matched_string, 
                                                 'offset': offset})
         
@@ -277,7 +249,7 @@ class Transner():
                     offset = item['sentence'].lower().index(word)
                     item['entities'].append({'type': 'RELIGION', 
                                             'value': item['sentence'][offset:offset+len(word)], 
-                                            'confidence': round(_RULE_BASED_SCORE, 2),
+                                            'confidence': float(str(_RULE_BASED_SCORE)[:-6]),
                                             'offset': offset})
 
         # check nested LOC in MISCELLANEOUS 
@@ -410,67 +382,70 @@ class Transner():
                 active_e_scores         = []
 
                 for e_pred, score in zip(prediction, scores):
-                    if score >= self.threshold:
-                        kv_pair         = list(e_pred.items())
-                        e_value, e_type = kv_pair[0]
-                        curr_offset = curr_offset + s[curr_offset:].find(e_value) #flexible with more than one leading white spaces
-                        if e_type[0] == 'B':
-                            #if a entity is still active, close it
-                            if active_e_type:
-                                curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
-                                            'value': active_e_value[:-1],
-                                            'confidence': float(str(np.mean(active_e_scores))[:6]),
-                                            'offset': beginning_offset}
-                                # often the string "mario è" is tagged with a person. The following operation manually fixes this problem
-                                if curr_entity['value'][-2:] == ' è':
-                                    curr_entity['value'] = curr_entity['value'][:-2] 
-                                curr_res['entities'].append(curr_entity)
-                                active_e_value  = ''
-                                active_e_scores = []
-                            beginning_offset = curr_offset
-                            active_e_type    = e_type[2:]
-                            active_e_value   += e_value + ' ' #! assumption: always only one whitespace inside multi-word entities
-                            active_e_scores.append(score)
-                        elif e_type[0] == 'I':
-                            #treat it as a beginner if the beginner is not present
-                            if not active_e_type:
-                                beginning_offset    = curr_offset
-                                active_e_type       = e_type[2:]
-                                active_e_value      += e_value + ' '
-                                active_e_scores.append(score)
-                            elif e_type[2:] == active_e_type:
-                                active_e_value += e_value + ' '
-                                active_e_scores.append(score)
-                            else:
-                                curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
-                                            'value': active_e_value[:-1],
-                                            'confidence': float(str(np.mean(active_e_scores))[:6]),
-                                            'offset': beginning_offset}
-                                curr_res['entities'].append(curr_entity)
-                                beginning_offset    = curr_offset
-                                active_e_type       = e_type[2:]
-                                active_e_value      = e_value + ' ' #here previous version was +=
-                                active_e_scores     = [score]
-                        elif e_type[0] == 'O' and active_e_type:
+                    kv_pair         = list(e_pred.items())
+                    e_value, e_type = kv_pair[0]
+                    curr_offset = curr_offset + s[curr_offset:].find(e_value) #flexible with more than one leading white spaces
+                    if e_type[0] == 'B':
+                        #if a entity is still active, close it
+                        if active_e_type:
                             curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
-                                        'value': active_e_value[:-1], 
-                                        'confidence': float(str(np.mean(active_e_scores))[:6]),#4 decimal digits
+                                        'value': active_e_value[:-1],
+                                        'confidence': float(str(np.mean(active_e_scores))[:6]),
                                         'offset': beginning_offset}
-                            # often the string "mario è" is tagged with a person. This operation clean this problem
+                            # often the string "mario è" is tagged with a person. The following operation manually fixes this problem
                             if curr_entity['value'][-2:] == ' è':
-                                curr_entity['value'] = curr_entity['value'][:-2] 
-                            curr_res['entities'].append(curr_entity)
-                            beginning_offset    = None
-                            active_e_type       = None
-                            active_e_value      = ''
-                            active_e_scores     = [score]
-
-                        #if last prediction for that string, then save the active entities
-                        if curr_offset >= len(s) and active_e_type:
+                                curr_entity['value'] = curr_entity['value'][:-2]
+                            if curr_entity['confidence'] >= self.threshold:
+                                curr_res['entities'].append(curr_entity)
+                            active_e_value  = ''
+                            active_e_scores = []
+                        beginning_offset = curr_offset
+                        active_e_type    = e_type[2:]
+                        active_e_value   += e_value + ' ' #! assumption: always only one whitespace inside multi-word entities
+                        active_e_scores.append(score)
+                    elif e_type[0] == 'I':
+                        #treat it as a beginner if the beginner is not present
+                        if not active_e_type:
+                            beginning_offset    = curr_offset
+                            active_e_type       = e_type[2:]
+                            active_e_value      += e_value + ' '
+                            active_e_scores.append(score)
+                        elif e_type[2:] == active_e_type:
+                            active_e_value += e_value + ' '
+                            active_e_scores.append(score)
+                        else:
                             curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
-                                        'value': active_e_value[:-1], 
-                                        'confidence': float(str(np.mean(active_e_scores))[:6]),#4 decimal digits
+                                        'value': active_e_value[:-1],
+                                        'confidence': float(str(np.mean(active_e_scores))[:6]),
                                         'offset': beginning_offset}
+                            if curr_entity['confidence'] >= self.threshold:
+                                curr_res['entities'].append(curr_entity)
+                            beginning_offset    = curr_offset
+                            active_e_type       = e_type[2:]
+                            active_e_value      = e_value + ' ' #here previous version was +=
+                            active_e_scores     = [score]
+                    elif e_type[0] == 'O' and active_e_type:
+                        curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
+                                    'value': active_e_value[:-1], 
+                                    'confidence': float(str(np.mean(active_e_scores))[:6]),#4 decimal digits
+                                    'offset': beginning_offset}
+                        # often the string "mario è" is tagged with a person. This operation clean this problem
+                        if curr_entity['value'][-2:] == ' è':
+                            curr_entity['value'] = curr_entity['value'][:-2] 
+                        if curr_entity['confidence'] >= self.threshold:
+                            curr_res['entities'].append(curr_entity)
+                        beginning_offset    = None
+                        active_e_type       = None
+                        active_e_value      = ''
+                        active_e_scores     = [score]
+
+                    #if last prediction for that string, then save the active entities
+                    if curr_offset >= len(s) and active_e_type:
+                        curr_entity = {'type': _SHORT_TO_TYPE[active_e_type], 
+                                    'value': active_e_value[:-1], 
+                                    'confidence': float(str(np.mean(active_e_scores))[:6]),#4 decimal digits
+                                    'offset': beginning_offset}
+                        if curr_entity['confidence'] >= self.threshold:
                             curr_res['entities'].append(curr_entity)
                 result_dict.append(curr_res)
 
