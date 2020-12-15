@@ -313,11 +313,12 @@ class Transner():
                 starting_index = 0
                 for date in dates:             
                     occurrence = re.search(re.escape(date[0]), item['sentence'][starting_index:])
+                    time_type = self.check_opening_time(item['entities'])
                     try:
                         if not (item['sentence'][occurrence.start() - 1] == ' ' and item['sentence'][occurrence.end() + 1] == ' '):
                             if not self.find_overlap(item['entities'], occurrence.start(), occurrence.end()):
                                 item['entities'].append(
-                                {'type': 'TIME',
+                                {'type': time_type,
                                 'value': date[0],
                                 'confidence': _RULE_BASED_SCORE,
                                 'offset': starting_index + occurrence.start()})
@@ -328,7 +329,7 @@ class Transner():
                         if occurrence.start() == 0 or occurrence.end() == len(item['sentence']):
                             if not self.find_overlap(item['entities'], occurrence.start(), occurrence.end()):
                                 item['entities'].append(
-                                {'type': 'TIME',
+                                {'type': time_type,
                                 'value': date[0],
                                 'confidence': _RULE_BASED_SCORE,
                                 'offset': starting_index + occurrence.start()})
@@ -378,6 +379,17 @@ class Transner():
 
         return False
 
+
+    def check_opening_time(self, entities):
+        loc_org_presence = False
+        for entity in entities:
+            if entity['type'] == 'ORGANIZATION' or entity['type'] == 'LOCATION':
+                loc_org_presence = True
+                break
+                   
+        if loc_org_presence:
+            return 'T_OPENING'
+        return 'TIME'
 
     def make_ner_dict(self, strings, predictions, conf_scores):
             """[summary]
