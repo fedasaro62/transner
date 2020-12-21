@@ -56,12 +56,12 @@ _REGEX_PATTERNS = {'IT_FISCAL_CODE': _CLEAN_START_REGEX + '[A-Z]{6}[0-9]{2}[A-E,
                     'EU_IBAN': _CLEAN_START_REGEX + '[A-Z]{2}?[ ]?[0-9]{2}[]?[0-9]{4}[ ]?[0-9]{4}[ ]?[0-9]{4}[ ]?[0-9]{4}[ ]?[0-9]{4}' + _CLEAN_END_REGEX,
                     'NL_CITIZEN_SERVICE_NUMBER': _CLEAN_START_REGEX + '[0-9]{9}' + _CLEAN_END_REGEX ,
                     'UK_NATIONAL_ID_NUMBER': _CLEAN_START_REGEX + '[A-CEGHJ-PR-TW-Z][A-CEGHJ-NPR-TW-Z]{1}[0-9]{6}[A-DFM]?' + _CLEAN_END_REGEX,
-                    'EU_PHONE_NUMBER': _CLEAN_START_REGEX + '([+]*[(]?[0-9]{1,4}[)]?){0,1}([\s\.0-9]+){10}' + _CLEAN_END_REGEX,
+                    'EU_PHONE_NUMBER': _CLEAN_START_REGEX + '([+]*[(]?[0-9]{1,4}[)]?){0,1}([\.0-9]+){10}' + _CLEAN_END_REGEX,
                     'EMAIL_ADDRESS': _CLEAN_START_REGEX + '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+' + _CLEAN_END_REGEX,
                     'IPV4_ADDRESS': _CLEAN_START_REGEX + '((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}' + _CLEAN_END_REGEX,
                     'URI': r'\[URL_[0-9]+\]'
                 }
-_RULE_BASED_SCORE = 0.90
+_RULE_BASED_SCORE = '0.9000' #keep it as a string to avoid problems
 
 
 
@@ -195,7 +195,6 @@ class Transner():
                     ]
         assert len(predictions) == len(input_strings), 'Batch sizes do not match'
         assert len(predictions) == len(conf_scores), 'Batch sizes do not match'
-
         ner_dict = self.make_ner_dict(processed_input, predictions, conf_scores)
         # post processing: get original strings (no preprocessed) and adjust the entities offset
         self.preprocesser.adjustEntitiesOffset([r['entities'] for r in ner_dict], adjust_case=True)
@@ -230,9 +229,8 @@ class Transner():
                             offset += 1
                         if matched_string[-1] in '., ':
                             matched_string = matched_string[:-1]
-                        
                         item['entities'].append({'type': field,
-                                                'confidence': float(str(_RULE_BASED_SCORE)[:-6]),
+                                                'confidence': float(_RULE_BASED_SCORE),
                                                 'value': matched_string, 
                                                 'offset': offset})
         
@@ -249,7 +247,7 @@ class Transner():
                     offset = item['sentence'].lower().index(word)
                     item['entities'].append({'type': 'RELIGION', 
                                             'value': item['sentence'][offset:offset+len(word)], 
-                                            'confidence': float(str(_RULE_BASED_SCORE)[:-6]),
+                                            'confidence': float(_RULE_BASED_SCORE),
                                             'offset': offset})
 
         # check nested LOC in MISCELLANEOUS 
@@ -303,7 +301,7 @@ class Transner():
                                 item['entities'].append(
                                 {'type': time_type,
                                 'value': date[0],
-                                'confidence': _RULE_BASED_SCORE,
+                                'confidence': float(_RULE_BASED_SCORE),
                                 'offset': starting_index + occurrence.start()})
                             
                         starting_index = starting_index + occurrence.end()
