@@ -292,7 +292,7 @@ class Transner():
                                 item['entities'].append(
                                 {'type': time_type,
                                 'value': date[0],
-                                'confidence': _RULE_BASED_SCORE,
+                                'confidence': float(_RULE_BASED_SCORE),
                                 'offset': starting_index + occurrence.start()})
                             
                         starting_index = starting_index + occurrence.end()
