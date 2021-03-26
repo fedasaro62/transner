@@ -80,3 +80,12 @@ Other pretrained model parameters:
 git lfs install
 git lfs track "*.pt"
 ```
+
+## Contributors
+Matteo Antonio Senese, Alberto Benincasa, Giuseppe Rizzo<br>
+Work done at <b>LINKS Foundation</b>, Turin, Italy<br>
+Funded by <b>H2020</b> projects: 
+* Oblivion,
+* [EasyRights](https://www.easyrights.eu/), 
+* [MediaVerse](https://mediaverse-project.eu/)
+
