@@ -81,6 +81,9 @@ git lfs install
 git lfs track "*.pt"
 ```
 
+## Available models
+please refer to this [README.md](transner/models/README.md)
+
 ## Contributors
 Matteo Antonio Senese, Alberto Benincasa, Giuseppe Rizzo<br>
 Work done at <b>LINKS Foundation</b>, Turin, Italy<br>
