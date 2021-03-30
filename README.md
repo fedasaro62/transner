@@ -73,13 +73,6 @@ Install lfs and clone the repo:
 git lfs install
 git clone git@github.com:D2KLab/transner.git
 ```
-Other pretrained model parameters:
-[pretrained models link](https://istitutoboella-my.sharepoint.com/:f:/g/personal/matteo_senese_linksfoundation_com/EvhOF23tja5Nuo3mw03v24oB7D14q9cjk16Ca7xF3nTm-A?e=AWpuiu)
-<br> To add a new model to the repo:
-```
-git lfs install
-git lfs track "*.pt"
-```
 
 ## Available models
 please refer to this [README.md](transner/models/README.md)
