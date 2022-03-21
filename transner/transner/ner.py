@@ -74,8 +74,7 @@ class Transner():
                 quantization=False, 
                 cuda_device=-1, 
                 language_detection=False, 
-                threshold=0,
-                args = {}):
+                threshold=0):
         """Transner object constructor
 
         Args:
@@ -95,13 +94,12 @@ class Transner():
             import fasttext
             self.get_model_detection_languages()
             self.language_detection_model = fasttext.load_model('lid.176.bin')
-        self.args = {'no_cache': True, 
+        args = {'no_cache': True, 
                 'use_cached_eval_features': False,
                 'max_seq_length': 512, #default=128
                 'process_count': 1, 
                 'silent': True, 
                 'n_gpu': 1 if not multi_gpu else 2} #n_gpu > 1 means multi-gpu (the number of gpus depend on the environment)
-        self.args.update(args)
         self.model = NERModel('bert', 
                             pretrained_path,
                             use_cuda=use_cuda,
@@ -292,7 +290,7 @@ class Transner():
                                 item['entities'].append(
                                 {'type': time_type,
                                 'value': date[0],
-                                'confidence': float(_RULE_BASED_SCORE),
+                                'confidence': _RULE_BASED_SCORE,
                                 'offset': starting_index + occurrence.start()})
                             
                         starting_index = starting_index + occurrence.end()

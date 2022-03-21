@@ -115,8 +115,5 @@ class NERSeparatePunctuations():
                     end_pos = start_pos + len(e['value']) - non_existing_tokens
                     e['value'] = s[start_pos:end_pos]
                     # clean possible white spaces (unlikely to happen)
-                    try:
-                        if e['value'][-1] == ' ':
-                            e['value'] = e['value'][:-1]
-                    except IndexError:
-                        print(e)
+                    if e['value'][-1] == ' ':
+                        e['value'] = e['value'][:-1]

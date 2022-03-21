@@ -1,0 +1,45 @@
+
+
+- Multilingual for NER (PER, LOC, ORG, MISC):
+{"strings": 
+    ["Vincenzo G. Fonzi è nato a Caserta il 13/08/1983", 
+    "Il seguente documento è firmato in calce per il signor Di Marzio.", 
+    "Conferma di avvenuto pagamento a Poste Italiane da parte del sig. Giuseppe Maria Boccardi."]
+} 
+http://localhost:5000/transner/v0.3/ner
+
+
+{"strings": 
+    ["Maria Santos è nata a Cardenas il 13/08/1983", 
+    "The following documents were signed by John Stewart at Berlin headquarters of Deutsche Bank", 
+    "Bevestiging van betaling aan ABN AMRO door dhr. Rutger Verhoeven."]
+}
+http://localhost:5000/transner/v0.3/ner
+
+
+{"strings": 
+    ["Il sig. Francesco Antonio Di Marco lavora presso la sede centrale di Enel a Roma", 
+    "Ms. Deschamps owns a manor on the Alps in Switzerland", 
+    "David Rutte heeft twee rekeningen bij de Rabobank"]
+}
+http://localhost:5000/transner/v0.5/ner
+
+
+- Italian for additional entities (PER, LOC, ORG, MISC, IBAN, SSID etc.):
+{"strings": 
+    ["Il sig. Francesco Antonio Di Marco è nato a Milano, codice fiscale DMRFNC80E01F205B, numero di telefono +39 0865989886, email di lavoro francesco.dimarco@hotmail.com, DMRGZC54E90F205E"]
+} 
+http://localhost:5000/transner/v0.5/ner
+
+
+- Poste Italiane unstructured fields samples
+{
+	"strings":[
+  		"il cliente è correntista postale ha investimento E 20000 fatto a Maggio 2014 ha casa di proprietà sul quale paga mutuo con scadenza 2022 è divorziato non ha nessun familiare a carico",
+      	"IL SIG. Franfulla Arnastaldo desidera avere l'accredito su C/C BANCA Unicredit SPA filiale di Roma Trastevere IBAN IT20M030020328058879986168 IN PROCEDURA NON E' STATO POSSIBILE INSERIRLO PERCHE' DAVA MESSAGGIO DI ERRORE  18072813 SI INVIA FAX PER REVOCA CLIENTE",
+      	"Operatore Patitucci Angelucciola tel, 06.7584002 La cliente percepisce anche reddito da lavoro dipendente soc Autostrade per e. 1900 ca. mese casa di proprietà Ariccia, la cliente necessita urgentemente esito della pratica inserita da quasi un mese.",
+      	"POSTE ITALIANE|NS STIMATO CORRENTISTA DAL 2007 PRIMA CON ACCREDITO STIPENDIO (DIP MIN INTERNI) ORA PENSIONE DAL 02/06/2008. TITOLARE DI INVESTIMENTI NS UFFICIO (POLIZZA EURO 20000/ BUONI POSTALI EURO 5000/ OBBLIGAZIONI EURO 15000). HA DUE FINANZIAMENTI IN CORSO (RATA 123,18 RES EURO 1611,79/ RATA 251,12 RES EURO 4320,32 COME DA CONTEGGI ESTINTIVI ALLEGATI) CHE ESTINGUERA' CON EROGAZIONE PRESENTE RICHIESTA COME DA IMPEGNO SOTTOSCRITTO DALLO STESSO. VIVE IN CASA POPOLARE MA E' PROPRIETARIO IN COINTESTAZIONE CON LA MOGLIE DI IMMOBILE IN LOCAL ARICCIA. IL REDDITO COMPLESSIVO COMPRENDE LA STIPENDIO DELLA FIGLIA.09/01/2017 COME DA VS RICHIESTA E' STATA INVIATA VS FAX COPIA DOCUMENTO.",
+      	"Buongiorno, la prt è sospesa perchè manca la seconda pagina del cardif e il retro della carta d'identità è poco leggibile sembrerebbe FV82184569"
+  ]
+}
+http://localhost:5000/transner/v0.5/ner

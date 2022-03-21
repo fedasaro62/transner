@@ -1,0 +1,58 @@
+
+route: /ner_api/v0.1/ner
+
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Maria Santos è nata a Cardenas il 13/08/1983", "The following documents were signed by John Stewart at Berlin headquarters of Deutsche Bank", "Bevestiging van betaling aan ABN AMRO door dhr. Rutger Verhoeven."]}' http://localhost:5000/ner_api/v0.1/ner
+
+[
+  {
+    "entities": [
+      {
+        "offset": 0,
+        "type": "PERSON",
+        "value": "Maria Santos"
+      },
+      {
+        "offset": 22,
+        "type": "LOCATION",
+        "value": "Cardenas"
+      }
+    ],
+    "sentence": "Maria Santos \u00e8 nata a Cardenas il 13/08/1983"
+  },
+  {
+    "entities": [
+      {
+        "offset": 39,
+        "type": "PERSON",
+        "value": "John Stewart"
+      },
+      {
+        "offset": 55,
+        "type": "LOCATION",
+        "value": "Berlin"
+      },
+      {
+        "offset": 78,
+        "type": "ORGANIZATION",
+        "value": "Deutsche Bank"
+      }
+    ],
+    "sentence": "The following documents were signed by John Stewart at Berlin headquarters of Deutsche Bank"
+  },
+  {
+    "entities": [
+      {
+        "offset": 29,
+        "type": "ORGANIZATION",
+        "value": "ABN AMRO"
+      },
+      {
+        "offset": 48,
+        "type": "PERSON",
+        "value": "Rutger Verhoeven."
+      }
+    ],
+    "sentence": "Bevestiging van betaling aan ABN AMRO door dhr. Rutger Verhoeven."
+  }
+]
+

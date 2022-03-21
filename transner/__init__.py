@@ -1,1 +1,1 @@
-from .ner import Transner
+from .transner import Transner

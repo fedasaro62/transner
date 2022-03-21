@@ -1,14 +1,17 @@
 # transner
 NER with transformer
 
-* input: list of strings
-* output: dict object containing the extracted entities
+
+## route: /transner/v0.3/ner
+* input: JSON object containing a list of strings {“strings”: [...]}
+    * This interface expects sentences taken eventually from longer documents or records from a table. Please check with Pipple if they are willing to contribute to the provision of a sentence splitter for longer documents. Otherwise, we will implement it ourselves
+* output: JSON object containing the extracted entities
 
 * example of usage:
 ```console
-$python usage.py --strings "Mario Rossi è nato a Busto Arsizio" \
-                     "Il signor Di Marzio ha effettuato un pagamento a Matteo" \
-                     "Marco e Luca sono andati a Magenta"
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"strings": ["Mario Rossi è nato a Busto Arsizio", "Il signor Di Marzio ha effettuato un pagamento a Matteo", "Marco e Luca sono andati a Magenta"]}' http://localhost:5000/transner/v0.7/ner
+
+$curl -d '{"strings": ["Mario Rossi è nato a Busto Arsizio", "Il signor Di Marzio ha effettuato un pagamento a Matteo", "Marco e Luca sono andati a Magenta"]}' http://localhost:6000/transner/v0.7/ner -H "Content-Type: application/json"
 
 {
   "results": [
@@ -68,20 +71,27 @@ $python usage.py --strings "Mario Rossi è nato a Busto Arsizio" \
 ```
 
 ## HOW TO USE:
-Install lfs and clone the repo:
+clone the repository and then do:
 ```
-git lfs install
-git clone git@github.com:D2KLab/transner.git
+git submodule init
+git submodule update
 ```
+pretrained models link: https://istitutoboella-my.sharepoint.com/:f:/g/personal/matteo_senese_linksfoundation_com/EvhOF23tja5Nuo3mw03v24oB7D14q9cjk16Ca7xF3nTm-A?e=AWpuiu
 
-## Available models
-please refer to this [README.md](transner/models/README.md)
+conda create --name mediaverse_transner python=3.8
+conda activate mediaverse_rest
+pip install -r requirements.txt
 
-## Contributors
-Matteo Antonio Senese, Alberto Benincasa, Giuseppe Rizzo<br>
-Work done at <b>LINKS Foundation</b>, Turin, Italy<br>
-Funded by <b>H2020</b> projects: 
-* Oblivion,
-* [EasyRights](https://www.easyrights.eu/), 
-* [MediaVerse](https://mediaverse-project.eu/)
+### DOCKER
 
+###### build the image
+docker build -t transner-api .
+
+###### run the image 
+docker run -d --network host --name mediaverse_transner transner-api
+
+###### remove container and image
+docker ps
+docker stop mediaverse_transner
+docker rm mediaverse_transner
+docker rmi transner-api
